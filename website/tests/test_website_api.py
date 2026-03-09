@@ -1,4 +1,9 @@
+import shutil
+import tempfile
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -6,7 +11,37 @@ from rest_framework.test import APITestCase
 from website.models import Website
 
 
-class WebsiteGETTests(APITestCase):
+def _upload_file(filename, content, content_type):
+	return SimpleUploadedFile(filename, content.encode("utf-8"), content_type=content_type)
+
+
+def _website_files(prefix):
+	return {
+		"css": _upload_file(f"{prefix}.css", "body{margin:0;}", "text/css"),
+		"js": _upload_file(f"{prefix}.js", "console.log('ok');", "application/javascript"),
+		"header": _upload_file(f"{prefix}-header.html", "<header>Header</header>", "text/html"),
+		"footer": _upload_file(f"{prefix}-footer.html", "<footer>Footer</footer>", "text/html"),
+	}
+
+
+class TempMediaRootMixin:
+	"""Use a temporary MEDIA_ROOT for tests that upload files."""
+
+	@classmethod
+	def setUpClass(cls):
+		cls._temp_media_root = tempfile.mkdtemp(prefix="test-media-")
+		cls._media_override = override_settings(MEDIA_ROOT=cls._temp_media_root)
+		cls._media_override.enable()
+		super().setUpClass()
+
+	@classmethod
+	def tearDownClass(cls):
+		cls._media_override.disable()
+		shutil.rmtree(cls._temp_media_root, ignore_errors=True)
+		super().tearDownClass()
+
+
+class WebsiteGETTests(TempMediaRootMixin, APITestCase):
 	'''Tests for GET requests to the Website API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -23,12 +58,14 @@ class WebsiteGETTests(APITestCase):
 			name="Alpha Site",
 			description="First",
 			url="https://alpha.example.com",
+			**_website_files("alpha-site"),
 		)
 		cls.website_2 = Website.objects.create(
 			user=cls.user,
 			name="Beta Site",
 			description="Second",
 			url="https://beta.example.com",
+			**_website_files("beta-site"),
 		)
 
 	def test_website_list_returns_all_results(self):
@@ -83,7 +120,7 @@ class WebsiteGETTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class WebsitePOSTTests(APITestCase):
+class WebsitePOSTTests(TempMediaRootMixin, APITestCase):
 	'''Tests for POST requests to the Website API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -102,8 +139,9 @@ class WebsitePOSTTests(APITestCase):
 			"name": "New Site",
 			"description": "A new website",
 			"url": "https://newsite.example.com",
+			**_website_files("new-site"),
 		}
-		response = self.client.post(reverse("website-list"), data)
+		response = self.client.post(reverse("website-list"), data, format="multipart")
 
 		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 		self.assertEqual(Website.objects.count(), 1)
@@ -126,13 +164,15 @@ class WebsitePOSTTests(APITestCase):
 			user=self.user,
 			name="Duplicate Name",
 			url="https://first.example.com",
+			**_website_files("duplicate-first"),
 		)
 		data = {
 			"user": self.user.id,
 			"name": "Duplicate Name",
 			"url": "https://second.example.com",
+			**_website_files("duplicate-second"),
 		}
-		response = self.client.post(reverse("website-list"), data)
+		response = self.client.post(reverse("website-list"), data, format="multipart")
 
 		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 		self.assertEqual(Website.objects.count(), 1)
@@ -143,19 +183,21 @@ class WebsitePOSTTests(APITestCase):
 			user=self.user,
 			name="First Site",
 			url="https://duplicate.example.com",
+			**_website_files("first-site"),
 		)
 		data = {
 			"user": self.user.id,
 			"name": "Second Site",
 			"url": "https://duplicate.example.com",
+			**_website_files("second-site"),
 		}
-		response = self.client.post(reverse("website-list"), data)
+		response = self.client.post(reverse("website-list"), data, format="multipart")
 
 		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 		self.assertEqual(Website.objects.count(), 1)
 
 
-class WebsitePUTTests(APITestCase):
+class WebsitePUTTests(TempMediaRootMixin, APITestCase):
 	'''Tests for PUT requests to the Website API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -172,6 +214,7 @@ class WebsitePUTTests(APITestCase):
 			name="Original Site",
 			description="Original description",
 			url="https://original.example.com",
+			**_website_files("original-site"),
 		)
 
 	def test_update_website_with_valid_data(self):
@@ -181,10 +224,12 @@ class WebsitePUTTests(APITestCase):
 			"name": "Updated Site",
 			"description": "Updated description",
 			"url": "https://updated.example.com",
+			**_website_files("updated-site"),
 		}
 		response = self.client.put(
 			reverse("website-detail", args=[self.website.pk]),
 			data,
+			format="multipart",
 		)
 
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -220,7 +265,7 @@ class WebsitePUTTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class WebsitePATCHTests(APITestCase):
+class WebsitePATCHTests(TempMediaRootMixin, APITestCase):
 	'''Tests for PATCH requests to the Website API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -237,6 +282,7 @@ class WebsitePATCHTests(APITestCase):
 			name="Original Site",
 			description="Original description",
 			url="https://original.example.com",
+			**_website_files("partial-original-site"),
 		)
 
 	def test_partial_update_website_name(self):
@@ -268,7 +314,7 @@ class WebsitePATCHTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class WebsiteDELETETests(APITestCase):
+class WebsiteDELETETests(TempMediaRootMixin, APITestCase):
 	'''Tests for DELETE requests to the Website API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -286,6 +332,7 @@ class WebsiteDELETETests(APITestCase):
 			user=self.user,
 			name="Site to Delete",
 			url="https://delete.example.com",
+			**_website_files("delete-site"),
 		)
 		response = self.client.delete(reverse("website-detail", args=[website.pk]))
 

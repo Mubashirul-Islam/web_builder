@@ -1,4 +1,9 @@
+import shutil
+import tempfile
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -6,7 +11,41 @@ from rest_framework.test import APITestCase
 from website.models import Website, Page
 
 
-class PageGETTests(APITestCase):
+def _upload_file(filename, content, content_type):
+	return SimpleUploadedFile(filename, content.encode("utf-8"), content_type=content_type)
+
+
+def _website_files(prefix):
+	return {
+		"css": _upload_file(f"{prefix}.css", "body{margin:0;}", "text/css"),
+		"js": _upload_file(f"{prefix}.js", "console.log('ok');", "application/javascript"),
+		"header": _upload_file(f"{prefix}-header.html", "<header>Header</header>", "text/html"),
+		"footer": _upload_file(f"{prefix}-footer.html", "<footer>Footer</footer>", "text/html"),
+	}
+
+
+def _page_content_file(filename="content.html", content="<main>Content</main>"):
+	return _upload_file(filename, content, "text/html")
+
+
+class TempMediaRootMixin:
+	"""Use a temporary MEDIA_ROOT for tests that upload files."""
+
+	@classmethod
+	def setUpClass(cls):
+		cls._temp_media_root = tempfile.mkdtemp(prefix="test-media-")
+		cls._media_override = override_settings(MEDIA_ROOT=cls._temp_media_root)
+		cls._media_override.enable()
+		super().setUpClass()
+
+	@classmethod
+	def tearDownClass(cls):
+		cls._media_override.disable()
+		shutil.rmtree(cls._temp_media_root, ignore_errors=True)
+		super().tearDownClass()
+
+
+class PageGETTests(TempMediaRootMixin, APITestCase):
 	'''Tests for GET requests to the Page API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -22,19 +61,20 @@ class PageGETTests(APITestCase):
 			name="Docs Site",
 			description="Website for docs",
 			url="https://docs.example.com",
+			**_website_files("docs-site-get"),
 		)
 
 		cls.page_1 = Page.objects.create(
 			website=cls.website,
 			title="Getting Started",
 			slug="getting-started",
-			content="Start here",
+			content=_page_content_file("getting-started.html", "<main>Start here</main>"),
 		)
 		cls.page_2 = Page.objects.create(
 			website=cls.website,
 			title="API Reference",
 			slug="api-reference",
-			content="Endpoints",
+			content=_page_content_file("api-reference.html", "<main>Endpoints</main>"),
 		)
 
 	def test_page_list_returns_all_results(self):
@@ -89,7 +129,7 @@ class PageGETTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class PagePOSTTests(APITestCase):
+class PagePOSTTests(TempMediaRootMixin, APITestCase):
 	'''Tests for POST requests to the Page API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -105,6 +145,7 @@ class PagePOSTTests(APITestCase):
 			name="Docs Site",
 			description="Website for docs",
 			url="https://docs.example.com",
+			**_website_files("docs-site-post"),
 		)
 
 	def test_create_page_with_valid_data(self):
@@ -113,9 +154,9 @@ class PagePOSTTests(APITestCase):
 			"website": self.website.id,
 			"title": "New Page",
 			"slug": "new-page",
-			"content": "This is new content",
+			"content": _page_content_file("new-page.html", "<main>This is new content</main>"),
 		}
-		response = self.client.post(reverse("page-list"), data)
+		response = self.client.post(reverse("page-list"), data, format="multipart")
 
 		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 		self.assertEqual(Page.objects.count(), 1)
@@ -133,7 +174,7 @@ class PagePOSTTests(APITestCase):
 		self.assertEqual(Page.objects.count(), 0)
 
 
-class PagePUTTests(APITestCase):
+class PagePUTTests(TempMediaRootMixin, APITestCase):
 	'''Tests for PUT requests to the Page API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -149,13 +190,14 @@ class PagePUTTests(APITestCase):
 			name="Docs Site",
 			description="Website for docs",
 			url="https://docs.example.com",
+			**_website_files("docs-site-put"),
 		)
 
 		cls.page = Page.objects.create(
 			website=cls.website,
 			title="Original Page",
 			slug="original-page",
-			content="Original content",
+			content=_page_content_file("original-page.html", "<main>Original content</main>"),
 		)
 
 	def test_update_page_with_valid_data(self):
@@ -164,18 +206,20 @@ class PagePUTTests(APITestCase):
 			"website": self.website.id,
 			"title": "Updated Page",
 			"slug": "updated-page",
-			"content": "Updated content",
+			"content": _page_content_file("updated-page.html", "<main>Updated content</main>"),
 		}
 		response = self.client.put(
 			reverse("page-detail", args=[self.page.pk]),
 			data,
+			format="multipart",
 		)
 
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.page.refresh_from_db()
 		self.assertEqual(self.page.title, "Updated Page")
 		self.assertEqual(self.page.slug, "updated-page")
-		self.assertEqual(self.page.content, "Updated content")
+		self.assertIn("updated-page", self.page.content.name)
+		self.assertTrue(self.page.content.name.endswith(".html"))
 
 	def test_update_page_with_missing_required_fields(self):
 		'''Test updating a page with missing required fields fails.'''
@@ -204,7 +248,7 @@ class PagePUTTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class PagePATCHTests(APITestCase):
+class PagePATCHTests(TempMediaRootMixin, APITestCase):
 	'''Tests for PATCH requests to the Page API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -220,13 +264,14 @@ class PagePATCHTests(APITestCase):
 			name="Docs Site",
 			description="Website for docs",
 			url="https://docs.example.com",
+			**_website_files("docs-site-patch"),
 		)
 
 		cls.page = Page.objects.create(
 			website=cls.website,
 			title="Original Page",
 			slug="original-page",
-			content="Original content",
+			content=_page_content_file("original-page-patch.html", "<main>Original content</main>"),
 		)
 
 	def test_partial_update_page_title(self):
@@ -243,7 +288,8 @@ class PagePATCHTests(APITestCase):
 		self.page.refresh_from_db()
 		self.assertEqual(self.page.title, "Partially Updated Page")
 		self.assertEqual(self.page.slug, "original-page")
-		self.assertEqual(self.page.content, "Original content")
+		self.assertIn("original-page-patch", self.page.content.name)
+		self.assertTrue(self.page.content.name.endswith(".html"))
 
 	def test_partial_update_nonexistent_page(self):
 		'''Test partially updating a nonexistent page returns 404.'''
@@ -258,7 +304,7 @@ class PagePATCHTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class PageDELETETests(APITestCase):
+class PageDELETETests(TempMediaRootMixin, APITestCase):
 	'''Tests for DELETE requests to the Page API endpoints.'''
 	@classmethod
 	def setUpTestData(cls):
@@ -274,6 +320,7 @@ class PageDELETETests(APITestCase):
 			name="Docs Site",
 			description="Website for docs",
 			url="https://docs.example.com",
+			**_website_files("docs-site-delete"),
 		)
 
 	def test_delete_page(self):
@@ -282,7 +329,7 @@ class PageDELETETests(APITestCase):
 			website=self.website,
 			title="Page to Delete",
 			slug="delete-page",
-			content="Content to delete",
+			content=_page_content_file("delete-page.html", "<main>Content to delete</main>"),
 		)
 		response = self.client.delete(reverse("page-detail", args=[page.pk]))
 
