@@ -1,24 +1,60 @@
-# Project Run Instructions
+# Web Builder API
 
-## 1) Setup virtual environment
+`web_builder` is a Django + Django REST Framework backend for managing websites and their pages, including uploaded asset files (`.css`, `.js`, `.html`).
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
+## Stack
+
+- Python 3
+- Django 6.0.2
+- Django REST Framework 3.16.1
+- PostgreSQL (via Docker Compose)
+- `django-environ` for environment-based configuration
+- `ruff` for linting
+
+## Project Structure
+
+```text
+config/              Django project config (settings, urls, wsgi/asgi)
+website/             Main app (models, serializers, views, API tests)
+media/               Default uploaded files root
+media_canary/        Canary uploaded files root
+docker-compose.yaml  PostgreSQL service
+requirements.txt     Python dependencies
 ```
 
-## 2) Install dependencies
+## Data Model
 
-```bash
-pip install -r requirements.txt
-```
+### `Website`
 
-## 3) Create `.env`
+- `user` (FK to `auth.User`, required)
+- `name` (unique, required)
+- `description` (optional)
+- `url` (unique, required)
+- `css` (`.css`, required)
+- `js` (`.js`, required)
+- `header` (`.html`, required)
+- `footer` (`.html`, required)
+- `created_at`, `modified_at`
 
-Create a `.env` file in the project root with:
+### `Page`
+
+- `website` (FK to `Website`, required)
+- `title` (required)
+- `slug` (required)
+- `content` (`.html`, required)
+- `created_at`, `modified_at`
+
+Uploaded files are stored under folders derived from the website name when available.
+
+## Environment Configuration
+
+The app reads environment variables from `.env` by default.
+You can switch env files with `ENV_FILE`, for example: `ENV_FILE=.env.canary`.
+
+### Required / Supported Variables
 
 ```env
-SECRET_KEY=django-insecure-kogg65f+!f=zohl_bv=ff5_1^v%aqw$_!^4y=k$46*t)8gt7d)
+SECRET_KEY=django-insecure-change-me
 DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
 
@@ -28,44 +64,101 @@ POSTGRES_DB=mydatabase
 POSTGRES_USER=myuser
 POSTGRES_PASSWORD=mypassword
 POSTGRES_PORT=5432
+
+# Optional
+MEDIA_ROOT=/absolute/path/to/media
 ```
 
-## 4) Start PostgreSQL with Docker
+## Local Setup
+
+1. Create and activate a virtual environment.
 
 ```bash
-docker compose up -d
+python -m venv .venv
+source .venv/bin/activate
 ```
 
-## 5) Apply migrations
+2. Install dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Ensure `.env` exists in project root (see configuration above).
+
+4. Start PostgreSQL.
+
+```bash
+docker compose -p dev up -d
+```
+
+5. Run migrations.
 
 ```bash
 python manage.py migrate
 ```
 
-## 6) Restore data
-
-```bash
-python manage.py loaddata data.json
-```
-
-## 7) Run development server
+6. Start the development server.
 
 ```bash
 python manage.py runserver
 ```
 
-## 8) Superuser credentials
+API base URL (local): `http://127.0.0.1:8000/api/`
 
-- Username: admin
-- Password: admin
+## Canary / Isolated Test Setup
 
-## 9) Canary testing with isolated DB and media
-
-Use `.env.canary` to keep canary runs isolated from default local data.
+Use `.env.canary` with a separate database and media path to avoid polluting local dev data.
 
 ```bash
-docker compose --env-file .env.canary up -d
+docker compose -p canary --env-file .env.canary up -d
 ENV_FILE=.env.canary python manage.py test
 ```
 
-Canary values should use a different `DATABASE_URL` and `MEDIA_ROOT` than `.env`.
+You can also run the app in canary mode:
+
+```bash
+ENV_FILE=.env.canary python manage.py runserver
+```
+
+## API Endpoints
+
+Base prefix: `/api/`
+
+### Websites
+
+- `GET /api/websites/` list websites
+- `POST /api/websites/` create website (multipart form)
+- `GET /api/websites/<id>/` retrieve website
+- `PUT /api/websites/<id>/` full update (multipart form)
+- `PATCH /api/websites/<id>/` partial update
+- `DELETE /api/websites/<id>/` delete
+
+Query params on list endpoint:
+
+- `search=<name-fragment>`
+- `ordering=created_at|modified_at` (prefix with `-` for descending)
+- `limit=<n>&offset=<n>` (limit/offset pagination)
+
+### Pages
+
+- `GET /api/pages/` list pages
+- `POST /api/pages/` create page (multipart form)
+- `GET /api/pages/<id>/` retrieve page
+- `PUT /api/pages/<id>/` full update (multipart form)
+- `PATCH /api/pages/<id>/` partial update
+- `DELETE /api/pages/<id>/` delete
+
+Query params on list endpoint:
+
+- `search=<title-fragment>`
+- `ordering=created_at|modified_at` (prefix with `-` for descending)
+- `limit=<n>&offset=<n>` (limit/offset pagination)
+
+## Testing
+
+Run all tests:
+
+```bash
+python manage.py test
+```
