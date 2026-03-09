@@ -58,3 +58,14 @@ python manage.py runserver
 
 - Username: admin
 - Password: admin
+
+## 9) Canary testing with isolated DB and media
+
+Use `.env.canary` to keep canary runs isolated from default local data.
+
+```bash
+docker compose --env-file .env.canary up -d
+ENV_FILE=.env.canary python manage.py test
+```
+
+Canary values should use a different `DATABASE_URL` and `MEDIA_ROOT` than `.env`.
