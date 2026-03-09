@@ -29,20 +29,24 @@ class PageList(APIView):
     ordering = ['-modified_at']
 
     def get_queryset(self):
+        """Return the base queryset for listing pages."""
         return Page.objects.all()
 
     def filter_queryset(self, queryset):
+        """Apply configured filter backends to the provided queryset."""
         for backend in self.filter_backends:
             queryset = backend().filter_queryset(self.request, queryset, self)
         return queryset
 
     def get_paginator(self):
+        """Instantiate the default paginator when pagination is enabled."""
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         if not pagination_class:
             return None
         return pagination_class()
 
     def get(self, request):
+        """List pages with optional filtering, ordering, and pagination."""
         queryset = self.filter_queryset(self.get_queryset())
         paginator = self.get_paginator()
 
@@ -56,6 +60,7 @@ class PageList(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        """Create a new page from the request payload."""
         serializer = PageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -66,14 +71,17 @@ class PageDetail(APIView):
     '''API endpoint that allows a single page to be viewed, updated, or deleted.'''
 
     def get_object(self, pk):
+        """Return a page by primary key or raise 404 if it does not exist."""
         return get_object_or_404(Page, pk=pk)
 
     def get(self, request, pk):
+        """Retrieve a single page by primary key."""
         page = self.get_object(pk)
         serializer = PageSerializer(page)
         return Response(serializer.data)
 
     def put(self, request, pk):
+        """Fully update an existing page by primary key."""
         page = self.get_object(pk)
         serializer = PageSerializer(page, data=request.data)
         if serializer.is_valid():
@@ -82,6 +90,7 @@ class PageDetail(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, pk):
+        """Partially update an existing page by primary key."""
         page = self.get_object(pk)
         serializer = PageSerializer(page, data=request.data, partial=True)
         if serializer.is_valid():
@@ -90,6 +99,7 @@ class PageDetail(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
+        """Delete an existing page by primary key."""
         page = self.get_object(pk)
         page.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
