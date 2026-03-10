@@ -8,25 +8,30 @@ from website.models import Page, Website
 
 
 class websiteList(generics.ListCreateAPIView):
-    '''API endpoint that allows websites to be viewed or created.'''
+    """API endpoint that allows websites to be viewed or created."""
+
     queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name']    
-    ordering_fields = ['created_at', 'modified_at']
-    ordering = ['-modified_at']
+    search_fields = ["name"]
+    ordering_fields = ["created_at", "modified_at"]
+    ordering = ["-modified_at"]
+
 
 class websiteDetail(generics.RetrieveUpdateDestroyAPIView):
-    '''API endpoint that allows a single website to be viewed, updated, or deleted.'''
+    """API endpoint that allows a single website to be viewed, updated, or deleted."""
+
     queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
 
+
 class PageList(APIView):
-    '''API endpoint that allows pages to be viewed or created.'''
+    """API endpoint that allows pages to be viewed or created."""
+
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title']
-    ordering_fields = ['created_at', 'modified_at']
-    ordering = ['-modified_at']
+    search_fields = ["title"]
+    ordering_fields = ["created_at", "modified_at"]
+    ordering = ["-modified_at"]
 
     def get_queryset(self):
         """Return the base queryset for listing pages."""
@@ -67,8 +72,9 @@ class PageList(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class PageDetail(APIView):
-    '''API endpoint that allows a single page to be viewed, updated, or deleted.'''
+    """API endpoint that allows a single page to be viewed, updated, or deleted."""
 
     def get_object(self, pk):
         """Return a page by primary key or raise 404 if it does not exist."""

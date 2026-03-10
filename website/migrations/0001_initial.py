@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,31 +16,111 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Website',
+            name="Website",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255, unique=True)),
-                ('description', models.TextField(blank=True, default='')),
-                ('url', models.URLField(max_length=500, unique=True)),
-                ('css', models.FileField(upload_to=website.models.asset_upload_path, validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['css'])])),
-                ('js', models.FileField(upload_to=website.models.asset_upload_path, validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['js'])])),
-                ('header', models.FileField(upload_to=website.models.asset_upload_path, validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['html'])])),
-                ('footer', models.FileField(upload_to=website.models.asset_upload_path, validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['html'])])),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('modified_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='websites', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255, unique=True)),
+                ("description", models.TextField(blank=True, default="")),
+                ("url", models.URLField(max_length=500, unique=True)),
+                (
+                    "css",
+                    models.FileField(
+                        upload_to=website.models.asset_upload_path,
+                        validators=[
+                            django.core.validators.FileExtensionValidator(
+                                allowed_extensions=["css"]
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "js",
+                    models.FileField(
+                        upload_to=website.models.asset_upload_path,
+                        validators=[
+                            django.core.validators.FileExtensionValidator(
+                                allowed_extensions=["js"]
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "header",
+                    models.FileField(
+                        upload_to=website.models.asset_upload_path,
+                        validators=[
+                            django.core.validators.FileExtensionValidator(
+                                allowed_extensions=["html"]
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "footer",
+                    models.FileField(
+                        upload_to=website.models.asset_upload_path,
+                        validators=[
+                            django.core.validators.FileExtensionValidator(
+                                allowed_extensions=["html"]
+                            )
+                        ],
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("modified_at", models.DateTimeField(auto_now=True, db_index=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="websites",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Page',
+            name="Page",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(db_index=True, max_length=255)),
-                ('slug', models.SlugField(max_length=255)),
-                ('content', models.FileField(upload_to=website.models.asset_upload_path, validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['html'])])),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('modified_at', models.DateTimeField(auto_now=True, db_index=True)),
-                ('website', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='pages', to='website.website')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(db_index=True, max_length=255)),
+                ("slug", models.SlugField(max_length=255)),
+                (
+                    "content",
+                    models.FileField(
+                        upload_to=website.models.asset_upload_path,
+                        validators=[
+                            django.core.validators.FileExtensionValidator(
+                                allowed_extensions=["html"]
+                            )
+                        ],
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("modified_at", models.DateTimeField(auto_now=True, db_index=True)),
+                (
+                    "website",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="pages",
+                        to="website.website",
+                    ),
+                ),
             ],
         ),
     ]
