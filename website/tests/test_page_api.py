@@ -2,38 +2,28 @@ import shutil
 import tempfile
 
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from website.models import Website, Page
-
-
-def _upload_file(filename, content, content_type):
-    return SimpleUploadedFile(
-        filename, content.encode("utf-8"), content_type=content_type
-    )
+from website.utils.upload_file import upload_file
 
 
 def _website_files(prefix):
     return {
-        "css": _upload_file(f"{prefix}.css", "body{margin:0;}", "text/css"),
-        "js": _upload_file(
+        "css": upload_file(f"{prefix}.css", "body{margin:0;}", "text/css"),
+        "js": upload_file(
             f"{prefix}.js", "console.log('ok');", "application/javascript"
         ),
-        "header": _upload_file(
-            f"{prefix}-header.html", "<header>Header</header>", "text/html"
+        "header": upload_file(
+            f"{prefix}-header.txt", "<header>Header</header>", "text/plain"
         ),
-        "footer": _upload_file(
-            f"{prefix}-footer.html", "<footer>Footer</footer>", "text/html"
+        "footer": upload_file(
+            f"{prefix}-footer.txt", "<footer>Footer</footer>", "text/plain"
         ),
     }
-
-
-def _page_content_file(filename="content.html", content="<main>Content</main>"):
-    return _upload_file(filename, content, "text/html")
 
 
 class TempMediaRootMixin:
@@ -77,15 +67,23 @@ class PageGETTests(TempMediaRootMixin, APITestCase):
             website=cls.website,
             title="Getting Started",
             slug="getting-started",
-            content=_page_content_file(
-                "getting-started.html", "<main>Start here</main>"
+            meta = upload_file(
+                "getting-started-meta.txt", "<meta>Getting Started</meta>", "text/plain"
+            ),
+            content=upload_file(
+                "getting-started.txt", "<main>Start here</main>", "text/plain"
             ),
         )
         cls.page_2 = Page.objects.create(
             website=cls.website,
             title="API Reference",
             slug="api-reference",
-            content=_page_content_file("api-reference.html", "<main>Endpoints</main>"),
+            meta=upload_file(
+                "api-reference-meta.txt", "<meta>API Reference</meta>", "text/plain"
+            ),
+            content=upload_file(
+                "api-reference.txt", "<main>Endpoints</main>", "text/plain"
+            ),
         )
 
     def test_page_list_returns_all_results(self):
@@ -166,9 +164,8 @@ class PagePOSTTests(TempMediaRootMixin, APITestCase):
             "website": self.website.id,
             "title": "New Page",
             "slug": "new-page",
-            "content": _page_content_file(
-                "new-page.html", "<main>This is new content</main>"
-            ),
+            "meta": upload_file("new-page-meta.txt", "<meta>New Page</meta>", "text/plain"),
+            "content": upload_file("new-page.txt", "<main>This is new content</main>", "text/plain"),
         }
         response = self.client.post(reverse("page-list"), data, format="multipart")
 
@@ -212,8 +209,9 @@ class PagePUTTests(TempMediaRootMixin, APITestCase):
             website=cls.website,
             title="Original Page",
             slug="original-page",
-            content=_page_content_file(
-                "original-page.html", "<main>Original content</main>"
+            meta=upload_file("original-page-meta.txt", "<meta>Original Page</meta>", "text/plain"),
+            content=upload_file(
+                "original-page.txt", "<main>Original content</main>", "text/plain"
             ),
         )
 
@@ -223,8 +221,9 @@ class PagePUTTests(TempMediaRootMixin, APITestCase):
             "website": self.website.id,
             "title": "Updated Page",
             "slug": "updated-page",
-            "content": _page_content_file(
-                "updated-page.html", "<main>Updated content</main>"
+            "meta": upload_file("updated-page-meta.txt", "<meta>Updated Page</meta>", "text/plain"),
+            "content": upload_file(
+                "updated-page.txt", "<main>Updated content</main>", "text/plain"
             ),
         }
         response = self.client.put(
@@ -238,7 +237,9 @@ class PagePUTTests(TempMediaRootMixin, APITestCase):
         self.assertEqual(self.page.title, "Updated Page")
         self.assertEqual(self.page.slug, "updated-page")
         self.assertIn("updated-page", self.page.content.name)
-        self.assertTrue(self.page.content.name.endswith(".html"))
+        self.assertIn("updated-page-meta", self.page.meta.name)
+        self.assertTrue(self.page.meta.name.endswith(".txt"))
+        self.assertTrue(self.page.content.name.endswith(".txt"))
 
     def test_update_page_with_missing_required_fields(self):
         """Test updating a page with missing required fields fails."""
@@ -291,8 +292,9 @@ class PagePATCHTests(TempMediaRootMixin, APITestCase):
             website=cls.website,
             title="Original Page",
             slug="original-page",
-            content=_page_content_file(
-                "original-page-patch.html", "<main>Original content</main>"
+            meta=upload_file("original-page-meta.txt", "<meta>Original Page</meta>", "text/plain"),
+            content=upload_file(
+                "original-page-patch.txt", "<main>Original content</main>", "text/plain"
             ),
         )
 
@@ -310,8 +312,10 @@ class PagePATCHTests(TempMediaRootMixin, APITestCase):
         self.page.refresh_from_db()
         self.assertEqual(self.page.title, "Partially Updated Page")
         self.assertEqual(self.page.slug, "original-page")
+        self.assertIn("original-page-meta", self.page.meta.name)
+        self.assertTrue(self.page.meta.name.endswith(".txt"))
         self.assertIn("original-page-patch", self.page.content.name)
-        self.assertTrue(self.page.content.name.endswith(".html"))
+        self.assertTrue(self.page.content.name.endswith(".txt"))
 
     def test_partial_update_nonexistent_page(self):
         """Test partially updating a nonexistent page returns 404."""
@@ -352,8 +356,9 @@ class PageDELETETests(TempMediaRootMixin, APITestCase):
             website=self.website,
             title="Page to Delete",
             slug="delete-page",
-            content=_page_content_file(
-                "delete-page.html", "<main>Content to delete</main>"
+            meta=upload_file("delete-page-meta.txt", "<meta>Delete Page</meta>", "text/plain"),
+            content=upload_file(
+                "delete-page.txt", "<main>Content to delete</main>", "text/plain"
             ),
         )
         response = self.client.delete(reverse("page-detail", args=[page.pk]))

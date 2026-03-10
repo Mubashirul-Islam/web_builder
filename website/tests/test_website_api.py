@@ -24,10 +24,10 @@ def _website_files(prefix):
             f"{prefix}.js", "console.log('ok');", "application/javascript"
         ),
         "header": _upload_file(
-            f"{prefix}-header.html", "<header>Header</header>", "text/html"
+            f"{prefix}-header.txt", "<header>Header</header>", "text/plain"
         ),
         "footer": _upload_file(
-            f"{prefix}-footer.html", "<footer>Footer</footer>", "text/html"
+            f"{prefix}-footer.txt", "<footer>Footer</footer>", "text/plain"
         ),
     }
 

@@ -2,16 +2,7 @@ from django.db import models
 from django.core.validators import FileExtensionValidator
 
 from django.contrib.auth.models import User
-
-
-def asset_upload_path(instance, filename):
-    if hasattr(instance, "name") and instance.name:
-        return f"{instance.name}/{filename}"
-
-    if hasattr(instance, "website") and instance.website and instance.website.name:
-        return f"{instance.website.name}/{filename}"
-
-    return filename
+from .utils.asset_upload_path import asset_upload_path
 
 
 class Website(models.Model):
@@ -48,12 +39,12 @@ class Website(models.Model):
     )
     header = models.FileField(
         upload_to=asset_upload_path,
-        validators=[FileExtensionValidator(allowed_extensions=["html"])],
+        validators=[FileExtensionValidator(allowed_extensions=["txt"])],
         help_text="The header file for the website.",
     )
     footer = models.FileField(
         upload_to=asset_upload_path,
-        validators=[FileExtensionValidator(allowed_extensions=["html"])],
+        validators=[FileExtensionValidator(allowed_extensions=["txt"])],
         help_text="The footer file for the website.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -76,9 +67,16 @@ class Page(models.Model):
         max_length=255, db_index=True, help_text="The title of the page."
     )
     slug = models.SlugField(max_length=255, help_text="The slug for the page.")
+    meta = models.FileField(
+		upload_to=asset_upload_path,
+		validators=[FileExtensionValidator(allowed_extensions=["txt"])],
+		help_text="The meta file for the page.",
+        null=True,
+        blank=True,
+	)
     content = models.FileField(
         upload_to=asset_upload_path,
-        validators=[FileExtensionValidator(allowed_extensions=["html"])],
+        validators=[FileExtensionValidator(allowed_extensions=["txt"])],
         help_text="The content file for the page.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
