@@ -1,6 +1,6 @@
 # Web Builder API
 
-`web_builder` is a Django + Django REST Framework backend for managing websites and their pages, including uploaded asset files (`.css`, `.js`, `.html`).
+`web_builder` is a Django + Django REST Framework backend for managing websites and their pages, including uploaded asset files (`.css`, `.js`, `.txt`).
 
 ## Stack
 
@@ -32,8 +32,8 @@ requirements.txt     Python dependencies
 - `url` (unique, required)
 - `css` (`.css`, required)
 - `js` (`.js`, required)
-- `header` (`.html`, required)
-- `footer` (`.html`, required)
+- `header` (`.txt`, required)
+- `footer` (`.txt`, required)
 - `created_at`, `modified_at`
 
 ### `Page`
@@ -41,10 +41,14 @@ requirements.txt     Python dependencies
 - `website` (FK to `Website`, required)
 - `title` (required)
 - `slug` (required)
-- `content` (`.html`, required)
+- `meta` (`.txt`, optional)
+- `content` (`.txt`, required)
 - `created_at`, `modified_at`
 
-Uploaded files are stored under folders derived from the website name when available.
+Uploaded files are stored under folders derived from the website name when available:
+
+- Website assets: `<website_name>/<filename>`
+- Page assets: `<website_name>/<page_slug>/<filename>`
 
 ## Environment Configuration
 
@@ -98,7 +102,13 @@ docker compose -p dev up -d
 python manage.py migrate
 ```
 
-6. Start the development server.
+6. (Optional) Seed development data.
+
+```bash
+python manage.py seed_db
+```
+
+7. Start the development server.
 
 ```bash
 python manage.py runserver
