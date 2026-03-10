@@ -7,9 +7,11 @@ from django.core.files.base import ContentFile
 fake = Faker()
 
 class Command(BaseCommand):
+    '''Management command to seed the database with initial data for testing and development.'''
     help = "Seed the database with initial data for testing and development."
 
     def handle(self, *args, **options):
+        '''Seed the database with sample users, websites, and pages.'''
 
         for _ in range(5):
             # Create a test user
