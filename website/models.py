@@ -67,13 +67,21 @@ class Page(models.Model):
         max_length=255, db_index=True, help_text="The title of the page."
     )
     slug = models.SlugField(max_length=255, help_text="The slug for the page.")
-    meta = models.FileField(
-		upload_to=asset_upload_path,
-		validators=[FileExtensionValidator(allowed_extensions=["txt"])],
-		help_text="The meta file for the page.",
-        null=True,
+    meta_description = models.TextField(
+        blank=True, default="", help_text="A brief description of the page."
+    )
+    meta_og_type = models.CharField(
+        max_length=50,
         blank=True,
-	)
+        default="",
+        help_text="The Open Graph type for the page (e.g., 'website', 'article').",
+    )
+    meta_og_image = models.URLField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="The URL of the Open Graph image for the page.",
+    )
     content = models.FileField(
         upload_to=asset_upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["txt"])],

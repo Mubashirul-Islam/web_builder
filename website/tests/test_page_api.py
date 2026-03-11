@@ -67,9 +67,9 @@ class PageGETTests(TempMediaRootMixin, APITestCase):
             website=cls.website,
             title="Getting Started",
             slug="getting-started",
-            meta = upload_file(
-                "getting-started-meta.txt", "<meta>Getting Started</meta>", "text/plain"
-            ),
+            meta_description="Getting Started page",
+            meta_og_type="article",
+            meta_og_image="https://docs.example.com/assets/getting-started-og.png",
             content=upload_file(
                 "getting-started.txt", "<main>Start here</main>", "text/plain"
             ),
@@ -78,9 +78,9 @@ class PageGETTests(TempMediaRootMixin, APITestCase):
             website=cls.website,
             title="API Reference",
             slug="api-reference",
-            meta=upload_file(
-                "api-reference-meta.txt", "<meta>API Reference</meta>", "text/plain"
-            ),
+            meta_description="API Reference page",
+            meta_og_type="website",
+            meta_og_image="https://docs.example.com/assets/api-reference-og.png",
             content=upload_file(
                 "api-reference.txt", "<main>Endpoints</main>", "text/plain"
             ),
@@ -164,7 +164,9 @@ class PagePOSTTests(TempMediaRootMixin, APITestCase):
             "website": self.website.id,
             "title": "New Page",
             "slug": "new-page",
-            "meta": upload_file("new-page-meta.txt", "<meta>New Page</meta>", "text/plain"),
+            "meta_description": "New Page meta description",
+            "meta_og_type": "website",
+            "meta_og_image": "https://docs.example.com/assets/new-page-og.png",
             "content": upload_file("new-page.txt", "<main>This is new content</main>", "text/plain"),
         }
         response = self.client.post(reverse("page-list"), data, format="multipart")
@@ -209,7 +211,9 @@ class PagePUTTests(TempMediaRootMixin, APITestCase):
             website=cls.website,
             title="Original Page",
             slug="original-page",
-            meta=upload_file("original-page-meta.txt", "<meta>Original Page</meta>", "text/plain"),
+            meta_description="Original Page meta description",
+            meta_og_type="website",
+            meta_og_image="https://docs.example.com/assets/original-page-og.png",
             content=upload_file(
                 "original-page.txt", "<main>Original content</main>", "text/plain"
             ),
@@ -221,7 +225,9 @@ class PagePUTTests(TempMediaRootMixin, APITestCase):
             "website": self.website.id,
             "title": "Updated Page",
             "slug": "updated-page",
-            "meta": upload_file("updated-page-meta.txt", "<meta>Updated Page</meta>", "text/plain"),
+            "meta_description": "Updated Page meta description",
+            "meta_og_type": "article",
+            "meta_og_image": "https://docs.example.com/assets/updated-page-og.png",
             "content": upload_file(
                 "updated-page.txt", "<main>Updated content</main>", "text/plain"
             ),
@@ -236,9 +242,13 @@ class PagePUTTests(TempMediaRootMixin, APITestCase):
         self.page.refresh_from_db()
         self.assertEqual(self.page.title, "Updated Page")
         self.assertEqual(self.page.slug, "updated-page")
+        self.assertEqual(self.page.meta_description, "Updated Page meta description")
+        self.assertEqual(self.page.meta_og_type, "article")
+        self.assertEqual(
+            self.page.meta_og_image,
+            "https://docs.example.com/assets/updated-page-og.png",
+        )
         self.assertIn("updated-page", self.page.content.name)
-        self.assertIn("updated-page-meta", self.page.meta.name)
-        self.assertTrue(self.page.meta.name.endswith(".txt"))
         self.assertTrue(self.page.content.name.endswith(".txt"))
 
     def test_update_page_with_missing_required_fields(self):
@@ -292,7 +302,9 @@ class PagePATCHTests(TempMediaRootMixin, APITestCase):
             website=cls.website,
             title="Original Page",
             slug="original-page",
-            meta=upload_file("original-page-meta.txt", "<meta>Original Page</meta>", "text/plain"),
+            meta_description="Original Page meta description",
+            meta_og_type="website",
+            meta_og_image="https://docs.example.com/assets/original-page-og.png",
             content=upload_file(
                 "original-page-patch.txt", "<main>Original content</main>", "text/plain"
             ),
@@ -312,8 +324,12 @@ class PagePATCHTests(TempMediaRootMixin, APITestCase):
         self.page.refresh_from_db()
         self.assertEqual(self.page.title, "Partially Updated Page")
         self.assertEqual(self.page.slug, "original-page")
-        self.assertIn("original-page-meta", self.page.meta.name)
-        self.assertTrue(self.page.meta.name.endswith(".txt"))
+        self.assertEqual(self.page.meta_description, "Original Page meta description")
+        self.assertEqual(self.page.meta_og_type, "website")
+        self.assertEqual(
+            self.page.meta_og_image,
+            "https://docs.example.com/assets/original-page-og.png",
+        )
         self.assertIn("original-page-patch", self.page.content.name)
         self.assertTrue(self.page.content.name.endswith(".txt"))
 
@@ -356,7 +372,9 @@ class PageDELETETests(TempMediaRootMixin, APITestCase):
             website=self.website,
             title="Page to Delete",
             slug="delete-page",
-            meta=upload_file("delete-page-meta.txt", "<meta>Delete Page</meta>", "text/plain"),
+            meta_description="Delete Page meta description",
+            meta_og_type="website",
+            meta_og_image="https://docs.example.com/assets/delete-page-og.png",
             content=upload_file(
                 "delete-page.txt", "<main>Content to delete</main>", "text/plain"
             ),
