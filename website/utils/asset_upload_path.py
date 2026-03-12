@@ -1,5 +1,5 @@
 def asset_upload_path(instance, filename):
-    '''Determines the upload path for asset files based on the instance's model and attributes.'''
+    """Determines the upload path for asset files based on the instance's model and attributes."""
     model = instance._meta.model_name
     if model == "website" and instance.name:
         return f"{instance.name}/{filename}"

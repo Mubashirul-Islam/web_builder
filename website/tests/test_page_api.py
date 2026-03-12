@@ -153,7 +153,9 @@ class PagePOSTTests(TempMediaRootMixin, APITestCase):
             "meta_description": "New Page meta description",
             "meta_og_type": "website",
             "meta_og_image": "https://docs.example.com/assets/new-page-og.png",
-            "content": upload_file("new-page.txt", "<main>This is new content</main>", "text/plain"),
+            "content": upload_file(
+                "new-page.txt", "<main>This is new content</main>", "text/plain"
+            ),
         }
         response = self.client.post(reverse("page-list"), data, format="multipart")
 

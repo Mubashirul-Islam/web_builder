@@ -111,6 +111,7 @@ class PageDetail(APIView):
         page.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 class WebsitePageList(generics.ListCreateAPIView):
     """API endpoint that allows pages of a specific website to be viewed or created."""
 
@@ -120,7 +121,7 @@ class WebsitePageList(generics.ListCreateAPIView):
         """Return the queryset of pages for the specified website."""
         website_id = self.kwargs.get("website_id")
         return Page.objects.filter(website_id=website_id)
-    
+
 
 class WebsiteBuild(APIView):
     """API endpoint that triggers the build process for a specific website."""
@@ -128,17 +129,29 @@ class WebsiteBuild(APIView):
     def post(self, request, pk):
         """Trigger the build process for the specified website."""
         website = get_object_or_404(Website, pk=pk)
-        
+
         if not website.pages.exists():
-            return Response({"error": "Cannot build website with no pages."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Cannot build website with no pages."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         mode = request.query_params.get("mode")
 
         if mode not in ("preview", "live"):
-            return Response({"error": "Invalid mode. Must be 'preview' or 'live'."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid mode. Must be 'preview' or 'live'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
             build_website(website, mode)
         except Exception as e:
-            return Response({"error": f"Build process failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": f"Build process failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
-        return Response({"message": f"Build process triggered for website '{website.name}'."}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Build process triggered for website '{website.name}'."},
+            status=status.HTTP_200_OK,
+        )

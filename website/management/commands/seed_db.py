@@ -6,12 +6,14 @@ from django.core.files.base import ContentFile
 
 fake = Faker()
 
+
 class Command(BaseCommand):
-    '''Management command to seed the database with initial data for testing and development.'''
+    """Management command to seed the database with initial data for testing and development."""
+
     help = "Seed the database with initial data for testing and development."
 
     def handle(self, *args, **options):
-        '''Seed the database with sample users, websites, and pages.'''
+        """Seed the database with sample users, websites, and pages."""
 
         for _ in range(5):
             # Create a test user
@@ -28,10 +30,20 @@ class Command(BaseCommand):
                 url=fake.unique.url(),
             )
             if created:
-                website.css.save("style.css", ContentFile("body { background-color: #f0f0f0; }"))
-                website.js.save("script.js", ContentFile("console.log('Hello, world!');"))
-                website.header.save("header.txt", ContentFile("<header><h1>Welcome to Test Website</h1></header>"))
-                website.footer.save("footer.txt", ContentFile("<footer><p>&copy; 2024 Test Website</p></footer>"))
+                website.css.save(
+                    "style.css", ContentFile("body { background-color: #f0f0f0; }")
+                )
+                website.js.save(
+                    "script.js", ContentFile("console.log('Hello, world!');")
+                )
+                website.header.save(
+                    "header.txt",
+                    ContentFile("<header><h1>Welcome to Test Website</h1></header>"),
+                )
+                website.footer.save(
+                    "footer.txt",
+                    ContentFile("<footer><p>&copy; 2024 Test Website</p></footer>"),
+                )
                 website.save()
 
             # Create sample pages for the website
@@ -45,7 +57,12 @@ class Command(BaseCommand):
                     meta_og_image=fake.image_url(),
                 )
                 if created:
-                    page.content.save(f"page-{i}-content.txt", ContentFile(f"<h2>This is Page {i}</h2><p>Content for page {i} goes here.</p>"))
+                    page.content.save(
+                        f"page-{i}-content.txt",
+                        ContentFile(
+                            f"<h2>This is Page {i}</h2><p>Content for page {i} goes here.</p>"
+                        ),
+                    )
                     page.save()
 
         self.stdout.write(self.style.SUCCESS("Database seeded successfully!"))

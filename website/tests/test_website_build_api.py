@@ -1,6 +1,5 @@
 import shutil
 import tempfile
-from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import override_settings
@@ -103,4 +102,3 @@ class WebsiteBuildTests(TempDirsMixin, APITestCase):
     def test_build_returns_404_for_nonexistent_website(self):
         response = self.client.post(self._build_url(pk=99999, mode="preview"))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-

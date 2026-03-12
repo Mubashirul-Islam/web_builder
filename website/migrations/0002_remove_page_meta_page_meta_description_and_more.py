@@ -4,29 +4,40 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0001_initial'),
+        ("website", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='page',
-            name='meta',
+            model_name="page",
+            name="meta",
         ),
         migrations.AddField(
-            model_name='page',
-            name='meta_description',
-            field=models.TextField(blank=True, default='', help_text='A brief description of the page.'),
+            model_name="page",
+            name="meta_description",
+            field=models.TextField(
+                blank=True, default="", help_text="A brief description of the page."
+            ),
         ),
         migrations.AddField(
-            model_name='page',
-            name='meta_og_image',
-            field=models.URLField(blank=True, default='', help_text='The URL of the Open Graph image for the page.', max_length=500),
+            model_name="page",
+            name="meta_og_image",
+            field=models.URLField(
+                blank=True,
+                default="",
+                help_text="The URL of the Open Graph image for the page.",
+                max_length=500,
+            ),
         ),
         migrations.AddField(
-            model_name='page',
-            name='meta_og_type',
-            field=models.CharField(blank=True, default='', help_text="The Open Graph type for the page (e.g., 'website', 'article').", max_length=50),
+            model_name="page",
+            name="meta_og_type",
+            field=models.CharField(
+                blank=True,
+                default="",
+                help_text="The Open Graph type for the page (e.g., 'website', 'article').",
+                max_length=50,
+            ),
         ),
     ]
