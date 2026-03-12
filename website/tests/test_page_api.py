@@ -9,21 +9,7 @@ from rest_framework.test import APITestCase
 
 from website.models import Website, Page
 from website.utils.upload_file import upload_file
-
-
-def _website_files(prefix):
-    return {
-        "css": upload_file(f"{prefix}.css", "body{margin:0;}", "text/css"),
-        "js": upload_file(
-            f"{prefix}.js", "console.log('ok');", "application/javascript"
-        ),
-        "header": upload_file(
-            f"{prefix}-header.txt", "<header>Header</header>", "text/plain"
-        ),
-        "footer": upload_file(
-            f"{prefix}-footer.txt", "<footer>Footer</footer>", "text/plain"
-        ),
-    }
+from website.utils.website_files import website_files
 
 
 class TempMediaRootMixin:
@@ -60,7 +46,7 @@ class PageGETTests(TempMediaRootMixin, APITestCase):
             name="Docs Site",
             description="Website for docs",
             url="https://docs.example.com",
-            **_website_files("docs-site-get"),
+            **website_files("docs-site-get"),
         )
 
         cls.page_1 = Page.objects.create(
@@ -155,7 +141,7 @@ class PagePOSTTests(TempMediaRootMixin, APITestCase):
             name="Docs Site",
             description="Website for docs",
             url="https://docs.example.com",
-            **_website_files("docs-site-post"),
+            **website_files("docs-site-post"),
         )
 
     def test_create_page_with_valid_data(self):
@@ -204,7 +190,7 @@ class PagePUTTests(TempMediaRootMixin, APITestCase):
             name="Docs Site",
             description="Website for docs",
             url="https://docs.example.com",
-            **_website_files("docs-site-put"),
+            **website_files("docs-site-put"),
         )
 
         cls.page = Page.objects.create(
@@ -295,7 +281,7 @@ class PagePATCHTests(TempMediaRootMixin, APITestCase):
             name="Docs Site",
             description="Website for docs",
             url="https://docs.example.com",
-            **_website_files("docs-site-patch"),
+            **website_files("docs-site-patch"),
         )
 
         cls.page = Page.objects.create(
@@ -363,7 +349,7 @@ class PageDELETETests(TempMediaRootMixin, APITestCase):
             name="Docs Site",
             description="Website for docs",
             url="https://docs.example.com",
-            **_website_files("docs-site-delete"),
+            **website_files("docs-site-delete"),
         )
 
     def test_delete_page(self):

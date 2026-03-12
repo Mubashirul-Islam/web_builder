@@ -9,27 +9,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from website.models import Website
-
-
-def _upload_file(filename, content, content_type):
-    return SimpleUploadedFile(
-        filename, content.encode("utf-8"), content_type=content_type
-    )
-
-
-def _website_files(prefix):
-    return {
-        "css": _upload_file(f"{prefix}.css", "body{margin:0;}", "text/css"),
-        "js": _upload_file(
-            f"{prefix}.js", "console.log('ok');", "application/javascript"
-        ),
-        "header": _upload_file(
-            f"{prefix}-header.txt", "<header>Header</header>", "text/plain"
-        ),
-        "footer": _upload_file(
-            f"{prefix}-footer.txt", "<footer>Footer</footer>", "text/plain"
-        ),
-    }
+from website.utils.website_files import website_files
 
 
 class TempMediaRootMixin:
@@ -67,14 +47,14 @@ class WebsiteGETTests(TempMediaRootMixin, APITestCase):
             name="Alpha Site",
             description="First",
             url="https://alpha.example.com",
-            **_website_files("alpha-site"),
+            **website_files("alpha-site"),
         )
         cls.website_2 = Website.objects.create(
             user=cls.user,
             name="Beta Site",
             description="Second",
             url="https://beta.example.com",
-            **_website_files("beta-site"),
+            **website_files("beta-site"),
         )
 
     def test_website_list_returns_all_results(self):
@@ -149,7 +129,7 @@ class WebsitePOSTTests(TempMediaRootMixin, APITestCase):
             "name": "New Site",
             "description": "A new website",
             "url": "https://newsite.example.com",
-            **_website_files("new-site"),
+            **website_files("new-site"),
         }
         response = self.client.post(reverse("website-list"), data, format="multipart")
 
@@ -174,13 +154,13 @@ class WebsitePOSTTests(TempMediaRootMixin, APITestCase):
             user=self.user,
             name="Duplicate Name",
             url="https://first.example.com",
-            **_website_files("duplicate-first"),
+            **website_files("duplicate-first"),
         )
         data = {
             "user": self.user.id,
             "name": "Duplicate Name",
             "url": "https://second.example.com",
-            **_website_files("duplicate-second"),
+            **website_files("duplicate-second"),
         }
         response = self.client.post(reverse("website-list"), data, format="multipart")
 
@@ -193,13 +173,13 @@ class WebsitePOSTTests(TempMediaRootMixin, APITestCase):
             user=self.user,
             name="First Site",
             url="https://duplicate.example.com",
-            **_website_files("first-site"),
+            **website_files("first-site"),
         )
         data = {
             "user": self.user.id,
             "name": "Second Site",
             "url": "https://duplicate.example.com",
-            **_website_files("second-site"),
+            **website_files("second-site"),
         }
         response = self.client.post(reverse("website-list"), data, format="multipart")
 
@@ -225,7 +205,7 @@ class WebsitePUTTests(TempMediaRootMixin, APITestCase):
             name="Original Site",
             description="Original description",
             url="https://original.example.com",
-            **_website_files("original-site"),
+            **website_files("original-site"),
         )
 
     def test_update_website_with_valid_data(self):
@@ -235,7 +215,7 @@ class WebsitePUTTests(TempMediaRootMixin, APITestCase):
             "name": "Updated Site",
             "description": "Updated description",
             "url": "https://updated.example.com",
-            **_website_files("updated-site"),
+            **website_files("updated-site"),
         }
         response = self.client.put(
             reverse("website-detail", args=[self.website.pk]),
@@ -294,7 +274,7 @@ class WebsitePATCHTests(TempMediaRootMixin, APITestCase):
             name="Original Site",
             description="Original description",
             url="https://original.example.com",
-            **_website_files("partial-original-site"),
+            **website_files("partial-original-site"),
         )
 
     def test_partial_update_website_name(self):
@@ -345,7 +325,7 @@ class WebsiteDELETETests(TempMediaRootMixin, APITestCase):
             user=self.user,
             name="Site to Delete",
             url="https://delete.example.com",
-            **_website_files("delete-site"),
+            **website_files("delete-site"),
         )
         response = self.client.delete(reverse("website-detail", args=[website.pk]))
 
