@@ -40,9 +40,11 @@ class Command(BaseCommand):
                     website=website,
                     title=f"Page {i}",
                     slug=f"page-{i}",
+                    meta_description=f"This is the meta description for Page {i}.",
+                    meta_og_type="website",
+                    meta_og_image=fake.image_url(),
                 )
                 if created:
-                    page.meta.save(f"page-{i}-meta.txt", ContentFile(f"<meta name='description' content='This is page {i}'>"))
                     page.content.save(f"page-{i}-content.txt", ContentFile(f"<h2>This is Page {i}</h2><p>Content for page {i} goes here.</p>"))
                     page.save()
 

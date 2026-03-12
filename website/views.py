@@ -109,3 +109,13 @@ class PageDetail(APIView):
         page = self.get_object(pk)
         page.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class WebsitePageList(generics.ListCreateAPIView):
+    """API endpoint that allows pages of a specific website to be viewed or created."""
+
+    serializer_class = PageSerializer
+
+    def get_queryset(self):
+        """Return the queryset of pages for the specified website."""
+        website_id = self.kwargs.get("website_id")
+        return Page.objects.filter(website_id=website_id)
