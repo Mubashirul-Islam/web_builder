@@ -1,7 +1,5 @@
 from rest_framework import serializers
-
-from .models import Website, Page
-
+from website.models import Page, Website
 
 class WebsiteSerializer(serializers.ModelSerializer):
     """Serializer for the Website model."""

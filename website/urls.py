@@ -1,10 +1,15 @@
 from django.urls import path
-from . import views
+from website import views
+
 
 urlpatterns = [
     path("websites/", views.websiteList.as_view(), name="website-list"),
     path("websites/<int:pk>/", views.websiteDetail.as_view(), name="website-detail"),
+
     path("pages/", views.PageList.as_view(), name="page-list"),
     path("pages/<int:pk>/", views.PageDetail.as_view(), name="page-detail"),
+    
     path("websites/<int:website_id>/pages/", views.WebsitePageList.as_view(), name="website-page-list"),
+
+    path("websites/<int:pk>/build/", views.WebsiteBuild.as_view(), name="website-build"),
 ]
