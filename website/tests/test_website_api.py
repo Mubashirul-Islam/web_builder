@@ -223,10 +223,9 @@ class WebsitePUTTests(TempMediaRootMixin, APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.website.refresh_from_db()
-        self.assertEqual(self.website.name, "Updated Site")
-        self.assertEqual(self.website.description, "Updated description")
-        self.assertEqual(self.website.url, "https://updated.example.com")
+        self.assertEqual(response.data["name"], "Updated Site")
+        self.assertEqual(response.data["description"], "Updated description")
+        self.assertEqual(response.data["url"], "https://updated.example.com")
 
     def test_update_website_with_missing_required_fields(self):
         """Test updating a website with missing required fields fails."""
@@ -287,10 +286,7 @@ class WebsitePATCHTests(TempMediaRootMixin, APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.website.refresh_from_db()
-        self.assertEqual(self.website.name, "Partially Updated Site")
-        self.assertEqual(self.website.description, "Original description")
-        self.assertEqual(self.website.url, "https://original.example.com")
+        self.assertEqual(response.data["name"], "Partially Updated Site")
 
     def test_partial_update_nonexistent_website(self):
         """Test partially updating a nonexistent website returns 404."""

@@ -143,6 +143,7 @@ class WebsiteBuild(APIView):
                 {"error": "Invalid mode. Must be 'preview' or 'live'."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
         try:
             build_website(website, mode)
         except Exception as e:
@@ -152,6 +153,6 @@ class WebsiteBuild(APIView):
             )
 
         return Response(
-            {"message": f"Build process triggered for website '{website.name}'."},
+            {"message": f"Build process triggered for website '{website.name}' in {mode} mode."},
             status=status.HTTP_200_OK,
         )

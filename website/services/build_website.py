@@ -5,24 +5,35 @@ from website.utils.read_file import read_file
 
 
 def build_website(website, mode):
-    """
-    Build HTML files for all pages of a website.
+    """Build the static website files for the given Website instance and mode.
 
-    mode: "preview" or "live"
-    Returns a list of output file paths written.
-    """
+    Args:
+        website: The Website instance to build.
+        mode: The build mode, either 'preview' or 'live'."""
 
-    header_content = read_file(website.header)
-    footer_content = read_file(website.footer)
-
-    js_content = read_file(website.js)
-    css_content = read_file(website.css)
+    header_content = read_or_fail(website.header, "Failed to read website header file.")
+    footer_content = read_or_fail(website.footer, "Failed to read website footer file.")
+    js_content = read_or_fail(website.js, "Failed to read website JavaScript file.")
+    css_content = read_or_fail(website.css, "Failed to read website CSS file.")
 
     output_dir = Path(settings.BASE_DIR) / "storage" / mode / website.name
-    output_dir.mkdir(parents=True, exist_ok=True)
+    mkdir_or_fail(
+        output_dir,
+        "Failed to create website output directory.",
+        parents=True,
+        exist_ok=True,
+    )
 
-    for page in website.pages.all():
-        page_content = read_file(page.content)
+    try:
+        pages = website.pages.all()
+    except Exception as exc:
+        raise RuntimeError("Failed to load website pages.") from exc
+
+    for page in pages:
+        page_content = read_or_fail(
+            page.content,
+            f"Failed to read content for page '{page.slug}'.",
+        )
 
         html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -46,13 +57,38 @@ def build_website(website, mode):
 </html>"""
 
         out_path = output_dir / f"{page.slug}.html"
-        out_path.write_text(html, encoding="utf-8")
+        write_or_fail(
+            out_path,
+            html,
+            f"Failed to write HTML output for page '{page.slug}'.",
+        )
 
     output_static_dir = output_dir / "static"
-    output_static_dir.mkdir(exist_ok=True)
+    mkdir_or_fail(output_static_dir, "Failed to create static output directory.")
 
     out_path_css = output_static_dir / "style.css"
-    out_path_css.write_text(css_content, encoding="utf-8")
+    write_or_fail(out_path_css, css_content, "Failed to write CSS output file.")
 
     out_path_js = output_static_dir / "script.js"
-    out_path_js.write_text(js_content, encoding="utf-8")
+    write_or_fail(out_path_js, js_content, "Failed to write JavaScript output file.")
+
+
+def read_or_fail(file_field, error_message):
+    try:
+        return read_file(file_field)
+    except Exception as exc:
+        raise RuntimeError(error_message) from exc
+
+
+def write_or_fail(path, content, error_message):
+    try:
+        path.write_text(content, encoding="utf-8")
+    except Exception as exc:
+        raise RuntimeError(error_message) from exc
+
+
+def mkdir_or_fail(path, error_message, parents=False, exist_ok=True):
+    try:
+        path.mkdir(parents=parents, exist_ok=exist_ok)
+    except Exception as exc:
+        raise RuntimeError(error_message) from exc

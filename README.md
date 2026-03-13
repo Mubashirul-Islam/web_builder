@@ -1,23 +1,25 @@
 # Web Builder API
 
-`web_builder` is a Django + Django REST Framework backend for managing websites and their pages, including uploaded asset files (`.css`, `.js`, `.txt`).
+`web_builder` is a Django + Django REST Framework backend for creating websites and pages, managing uploaded assets (`.css`, `.js`, `.txt`), and building static output for `preview` and `live` modes.
 
 ## Stack
 
 - Python 3
 - Django 6.0.2
 - Django REST Framework 3.16.1
-- PostgreSQL (via Docker Compose)
-- `django-environ` for environment-based configuration
+- PostgreSQL (Docker Compose)
+- `django-environ` for `.env`-based settings
+- `Faker` for seeding development data
 - `ruff` for linting
 
 ## Project Structure
 
 ```text
 config/              Django project config (settings, urls, wsgi/asgi)
-website/             Main app (models, serializers, views, API tests)
-media/               Default uploaded files root
-media_canary/        Canary uploaded files root
+website/             Main app (models, serializers, views, tests, services)
+media/               Default upload root
+media_canary/        Canary upload root
+storage/             Built static website output (preview/live)
 docker-compose.yaml  PostgreSQL service
 requirements.txt     Python dependencies
 ```
@@ -28,7 +30,7 @@ requirements.txt     Python dependencies
 
 - `user` (FK to `auth.User`, required)
 - `name` (unique, required)
-- `description` (optional)
+- `description` (optional, defaults to empty)
 - `url` (unique, required)
 - `css` (`.css`, required)
 - `js` (`.js`, required)
@@ -41,21 +43,26 @@ requirements.txt     Python dependencies
 - `website` (FK to `Website`, required)
 - `title` (required)
 - `slug` (required)
-- `meta` (`.txt`, optional)
+- `meta_description` (optional text)
+- `meta_og_type` (optional text)
+- `meta_og_image` (optional URL)
 - `content` (`.txt`, required)
 - `created_at`, `modified_at`
 
-Uploaded files are stored under folders derived from the website name when available:
+Uploaded file paths:
 
 - Website assets: `<website_name>/<filename>`
 - Page assets: `<website_name>/<page_slug>/<filename>`
 
 ## Environment Configuration
 
-The app reads environment variables from `.env` by default.
-You can switch env files with `ENV_FILE`, for example: `ENV_FILE=.env.canary`.
+By default, settings are loaded from `.env` in project root. Override the file with `ENV_FILE`:
 
-### Required / Supported Variables
+```bash
+ENV_FILE=.env.canary python manage.py runserver
+```
+
+### Supported Variables
 
 ```env
 SECRET_KEY=django-insecure-change-me
@@ -88,7 +95,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Ensure `.env` exists in project root (see configuration above).
+3. Ensure `.env` exists in project root.
 
 4. Start PostgreSQL.
 
@@ -102,33 +109,27 @@ docker compose -p dev up -d
 python manage.py migrate
 ```
 
-6. (Optional) Seed development data.
+6. Optional: seed development data.
 
 ```bash
 python manage.py seed_db
 ```
 
-7. Start the development server.
+7. Start the API server.
 
 ```bash
 python manage.py runserver
 ```
 
-API base URL (local): `http://127.0.0.1:8000/api/`
+Local API base URL: `http://127.0.0.1:8000/api/`
 
 ## Canary / Isolated Test Setup
 
-Use `.env.canary` with a separate database and media path to avoid polluting local dev data.
+Use a separate env file and database/media roots to isolate test data:
 
 ```bash
 docker compose -p canary --env-file .env.canary up -d
 ENV_FILE=.env.canary python manage.py test
-```
-
-You can also run the app in canary mode:
-
-```bash
-ENV_FILE=.env.canary python manage.py runserver
 ```
 
 ## API Endpoints
@@ -138,32 +139,53 @@ Base prefix: `/api/`
 ### Websites
 
 - `GET /api/websites/` list websites
-- `POST /api/websites/` create website (multipart form)
+- `POST /api/websites/` create website (`multipart/form-data`)
 - `GET /api/websites/<id>/` retrieve website
-- `PUT /api/websites/<id>/` full update (multipart form)
+- `PUT /api/websites/<id>/` full update (`multipart/form-data`)
 - `PATCH /api/websites/<id>/` partial update
 - `DELETE /api/websites/<id>/` delete
+- `POST /api/websites/<id>/build/?mode=preview|live` build website output
 
-Query params on list endpoint:
+Query params on `GET /api/websites/`:
 
 - `search=<name-fragment>`
 - `ordering=created_at|modified_at` (prefix with `-` for descending)
-- `limit=<n>&offset=<n>` (limit/offset pagination)
+- `limit=<n>&offset=<n>` (enables limit/offset pagination)
 
 ### Pages
 
 - `GET /api/pages/` list pages
-- `POST /api/pages/` create page (multipart form)
+- `POST /api/pages/` create page (`multipart/form-data`)
 - `GET /api/pages/<id>/` retrieve page
-- `PUT /api/pages/<id>/` full update (multipart form)
+- `PUT /api/pages/<id>/` full update (`multipart/form-data`)
 - `PATCH /api/pages/<id>/` partial update
 - `DELETE /api/pages/<id>/` delete
+- `GET /api/websites/<website_id>/pages/` list pages for a website
+- `POST /api/websites/<website_id>/pages/` create page for a website
 
-Query params on list endpoint:
+Query params on `GET /api/pages/`:
 
 - `search=<title-fragment>`
 - `ordering=created_at|modified_at` (prefix with `-` for descending)
-- `limit=<n>&offset=<n>` (limit/offset pagination)
+- `limit=<n>&offset=<n>` (enables limit/offset pagination)
+
+## Build Output
+
+Website builds generate static output under:
+
+- `storage/preview/<website_name>/`
+- `storage/live/<website_name>/`
+
+Each build writes:
+
+- `<page_slug>.html` for each page
+- `static/style.css`
+- `static/script.js`
+
+## Management Commands
+
+- `python manage.py seed_db`: create sample users, websites, and pages
+- `python manage.py clear_db`: remove users, websites, and pages
 
 ## Testing
 
@@ -171,4 +193,16 @@ Run all tests:
 
 ```bash
 python manage.py test
+```
+
+Run a specific module:
+
+```bash
+python manage.py test website.tests.test_website_build_api
+```
+
+## Linting
+
+```bash
+ruff check .
 ```
