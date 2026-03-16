@@ -17,9 +17,7 @@
 ```text
 config/              Django project config (settings, urls, wsgi/asgi)
 website/             Main app (models, serializers, views, tests, services)
-media/               Default upload root
-media_canary/        Canary upload root
-storage/             Built static website output (preview/live)
+media /              Default media root directory in this repo (note the space in folder name)
 docker-compose.yaml  PostgreSQL service
 requirements.txt     Python dependencies
 ```
@@ -51,8 +49,9 @@ requirements.txt     Python dependencies
 
 Uploaded file paths:
 
-- Website assets: `<website_name>/<filename>`
-- Page assets: `<website_name>/<page_slug>/<filename>`
+- Website `.css` / `.js`: `<website_name>/staging/static/<filename>`
+- Website `header` / `footer`: `<website_name>/staging/<filename>`
+- Page `content`: `<website_name>/staging/pages/<filename>`
 
 ## Environment Configuration
 
@@ -79,6 +78,8 @@ POSTGRES_PORT=5432
 # Optional
 MEDIA_ROOT=/absolute/path/to/media
 ```
+
+If `MEDIA_ROOT` is not set, the default is `BASE_DIR / "media / production"`.
 
 ## Local Setup
 
@@ -160,8 +161,6 @@ Query params on `GET /api/websites/`:
 - `PUT /api/pages/<id>/` full update (`multipart/form-data`)
 - `PATCH /api/pages/<id>/` partial update
 - `DELETE /api/pages/<id>/` delete
-- `GET /api/websites/<website_id>/pages/` list pages for a website
-- `POST /api/websites/<website_id>/pages/` create page for a website
 
 Query params on `GET /api/pages/`:
 
@@ -173,14 +172,19 @@ Query params on `GET /api/pages/`:
 
 Website builds generate static output under:
 
-- `storage/preview/<website_name>/`
-- `storage/live/<website_name>/`
+- `<MEDIA_ROOT>/<website_name>/preview/`
+- `<MEDIA_ROOT>/<website_name>/live/`
 
 Each build writes:
 
-- `<page_slug>.html` for each page
+- `pages/<page_slug>.html` for each page
 - `static/style.css`
 - `static/script.js`
+
+The build endpoint validates that:
+
+- `mode` query param is required and must be `preview` or `live`
+- the website has at least one page before building
 
 ## Management Commands
 
