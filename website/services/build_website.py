@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from django.conf import settings
 
 from website.utils.read_file import read_file
@@ -11,31 +12,37 @@ def build_website(website, mode):
         website: The Website instance to build.
         mode: The build mode, either 'preview' or 'live'."""
 
-    header_content = read_or_fail(website.header, "Failed to read website header file.")
-    footer_content = read_or_fail(website.footer, "Failed to read website footer file.")
-    js_content = read_or_fail(website.js, "Failed to read website JavaScript file.")
-    css_content = read_or_fail(website.css, "Failed to read website CSS file.")
+    header_content, footer_content, js_content, css_content = _read_assets(website)
 
     output_dir = Path(settings.MEDIA_ROOT) / website.name / mode
-    mkdir_or_fail(
-        output_dir,
-        "Failed to create website output directory.",
-        parents=True,
-        exist_ok=True,
-    )
+    pages_dir = output_dir / "pages"
+    static_dir = output_dir / "static"
 
-    try:
-        pages = website.pages.all()
-    except Exception as exc:
-        raise RuntimeError("Failed to load website pages.") from exc
+    output_dir.mkdir(parents=True, exist_ok=True)
+    pages_dir.mkdir(parents=True, exist_ok=True)
+    static_dir.mkdir(parents=True, exist_ok=True)
+
+    pages = website.pages.all()
 
     for page in pages:
-        page_content = read_or_fail(
-            page.content,
-            f"Failed to read content for page '{page.slug}'.",
-        )
+        page_content = read_file(page.content)
+        html = _render_page_html(page, header_content, page_content, footer_content)
+        _write_page(pages_dir, page.slug, html)
 
-        html = f"""<!DOCTYPE html>
+    _write_static_files(static_dir, css_content, js_content)
+
+
+def _read_assets(website):
+    return (
+        read_file(website.header),
+        read_file(website.footer),
+        read_file(website.js),
+        read_file(website.css),
+    )
+
+
+def _render_page_html(page, header_content, page_content, footer_content):
+    return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -56,40 +63,15 @@ def build_website(website, mode):
 </body>
 </html>"""
 
-        mkdir_or_fail(output_dir / "pages", "Failed to create pages output directory.")
-        out_path = output_dir  / "pages" / f"{page.slug}.html"
-        write_or_fail(
-            out_path,
-            html,
-            f"Failed to write HTML output for page '{page.slug}'.",
-        )
 
-    output_static_dir = output_dir / "static"
-    mkdir_or_fail(output_static_dir, "Failed to create static output directory.")
-
-    out_path_css = output_static_dir / "style.css"
-    write_or_fail(out_path_css, css_content, "Failed to write CSS output file.")
-
-    out_path_js = output_static_dir / "script.js"
-    write_or_fail(out_path_js, js_content, "Failed to write JavaScript output file.")
+def _write_page(pages_dir, slug, html):
+    page_path = pages_dir / f"{slug}.html"
+    page_path.write_text(html, encoding="utf-8")
 
 
-def read_or_fail(file_field, error_message):
-    try:
-        return read_file(file_field)
-    except Exception as exc:
-        raise RuntimeError(error_message) from exc
+def _write_static_files(static_dir, css_content, js_content):
+    css_path = static_dir / "style.css"
+    js_path = static_dir / "script.js"
 
-
-def write_or_fail(path, content, error_message):
-    try:
-        path.write_text(content, encoding="utf-8")
-    except Exception as exc:
-        raise RuntimeError(error_message) from exc
-
-
-def mkdir_or_fail(path, error_message, parents=False, exist_ok=True):
-    try:
-        path.mkdir(parents=parents, exist_ok=exist_ok)
-    except Exception as exc:
-        raise RuntimeError(error_message) from exc
+    css_path.write_text(css_content, encoding="utf-8")
+    js_path.write_text(js_content, encoding="utf-8")

@@ -3,7 +3,7 @@ from rest_framework import filters, generics, status
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
-from website.serializers import PageSerializer, WebsiteSerializer
+from website.serializers import PageSerializer, WebsiteBuildSerializer, WebsiteSerializer
 from website.models import Page, Website
 from website.services.build_website import build_website
 
@@ -112,43 +112,29 @@ class PageDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class WebsitePageList(generics.ListCreateAPIView):
-    """API endpoint that allows pages of a specific website to be viewed or created."""
-
-    serializer_class = PageSerializer
-
-    def get_queryset(self):
-        """Return the queryset of pages for the specified website."""
-        website_id = self.kwargs.get("website_id")
-        return Page.objects.filter(website_id=website_id)
-
-
 class WebsiteBuild(APIView):
     """API endpoint that triggers the build process for a specific website."""
 
     def post(self, request, pk):
         """Trigger the build process for the specified website."""
         website = get_object_or_404(Website, pk=pk)
-
-        if not website.pages.exists():
+        serializer = WebsiteBuildSerializer(
+            website,
+            data=request.query_params,
+        )
+        if not serializer.is_valid():
             return Response(
-                {"error": "Cannot build website with no pages."},
+                serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        mode = request.query_params.get("mode")
-
-        if mode not in ("preview", "live"):
-            return Response(
-                {"error": "Invalid mode. Must be 'preview' or 'live'."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        mode = serializer.validated_data["mode"]
 
         try:
             build_website(website, mode)
-        except Exception as e:
+        except Exception:
             return Response(
-                {"error": f"Build process failed: {str(e)}"},
+                {"error": "Build process failed."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
