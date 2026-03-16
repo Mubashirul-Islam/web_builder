@@ -16,7 +16,7 @@ def build_website(website, mode):
     js_content = read_or_fail(website.js, "Failed to read website JavaScript file.")
     css_content = read_or_fail(website.css, "Failed to read website CSS file.")
 
-    output_dir = Path(settings.BASE_DIR) / "storage" / mode / website.name
+    output_dir = Path(settings.MEDIA_ROOT) / website.name / mode
     mkdir_or_fail(
         output_dir,
         "Failed to create website output directory.",
@@ -56,7 +56,8 @@ def build_website(website, mode):
 </body>
 </html>"""
 
-        out_path = output_dir / f"{page.slug}.html"
+        mkdir_or_fail(output_dir / "pages", "Failed to create pages output directory.")
+        out_path = output_dir  / "pages" / f"{page.slug}.html"
         write_or_fail(
             out_path,
             html,

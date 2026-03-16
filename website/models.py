@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import FileExtensionValidator
 
 from django.contrib.auth.models import User
-from .utils.asset_upload_path import asset_upload_path
+from website.utils.asset_upload_path import asset_upload_path
 
 
 class Website(models.Model):

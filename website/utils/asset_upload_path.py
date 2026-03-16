@@ -1,10 +1,12 @@
 def asset_upload_path(instance, filename):
-    """Determines the upload path for asset files based on the instance's model and attributes."""
-    model = instance._meta.model_name
-    if model == "website" and instance.name:
-        return f"{instance.name}/{filename}"
+    """Generate a dynamic upload path for website assets based on the instance and filename."""
+    model = instance.__class__.__name__
 
-    if model == "page" and instance.website and instance.website.name:
-        return f"{instance.website.name}/{instance.slug}/{filename}"
+    if model == "Page":
+        return f"{instance.website.name}/temp/pages/{filename}"
+    elif model == "Website":              
+        if filename.endswith((".css", ".js")):
+            return f"{instance.name}/temp/static/{filename}"
+        
+        return f"{instance.name}/temp/{filename}"
 
-    return filename
