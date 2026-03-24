@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from website.models import Page, Website
+from website.models import Asset, Page, Website
 
 
 class PageSerializer(serializers.ModelSerializer):
@@ -12,6 +12,7 @@ class PageSerializer(serializers.ModelSerializer):
 
 class WebsiteSerializer(serializers.ModelSerializer):
     """Serializer for the Website model."""
+
     pages = PageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -28,7 +29,29 @@ class WebsiteBuildSerializer(serializers.Serializer):
         """Validate that the website has at least one page before building."""
 
         if not self.instance.pages.exists():
-            raise serializers.ValidationError(  
+            raise serializers.ValidationError(
                 {"error": "Cannot build website with no pages."}
             )
         return attrs
+
+
+class AssetSerializer(serializers.Serializer):
+    """Serializer for the Asset model."""
+
+    files = serializers.ListField(
+        child=serializers.FileField(),
+    )
+
+    def validate_files(self, files):
+        validated = []
+        for f in files:
+            if f.content_type.startswith("image/"):
+                file_type = Asset.AssetType.IMAGE
+            elif f.content_type.startswith("video/"):
+                file_type = Asset.AssetType.VIDEO
+            else:
+                raise serializers.ValidationError(
+                    f"Unsupported file type: {f.name}. Allowed: images/videos only."
+                )
+            validated.append((f, file_type))
+        return validated

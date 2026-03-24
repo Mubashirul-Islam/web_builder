@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Website, Page
+from .models import Asset, Website, Page
 
 
 @admin.register(Website)
@@ -20,3 +20,11 @@ class PageAdmin(admin.ModelAdmin):
     list_display = ("title", "slug", "website", "modified_at")
     search_fields = ("title", "slug")
     list_filter = ("created_at", "modified_at")
+
+@admin.register(Asset)
+class AssetAdmin(admin.ModelAdmin):
+    """Admin class for the Asset model."""
+
+    list_display = ("file", "type", "website", "size", "modified_at")
+    search_fields = ("file",)
+    list_filter = ("type", "modified_at")    

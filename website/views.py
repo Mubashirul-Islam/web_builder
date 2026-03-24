@@ -3,8 +3,13 @@ from rest_framework import filters, generics, status
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
-from website.serializers import PageSerializer, WebsiteBuildSerializer, WebsiteSerializer
-from website.models import Page, Website
+from website.serializers import (
+    AssetSerializer,
+    PageSerializer,
+    WebsiteBuildSerializer,
+    WebsiteSerializer,
+)
+from website.models import Asset, Page, Website
 from website.services.build_website import build_website
 
 
@@ -139,6 +144,44 @@ class WebsiteBuild(APIView):
             )
 
         return Response(
-            {"message": f"Build process triggered for website '{website.name}' in {mode} mode."},
+            {
+                "message": f"Build process triggered for website '{website.name}' in {mode} mode."
+            },
             status=status.HTTP_200_OK,
+        )
+
+
+class AssetUpload(APIView):
+    """API endpoint that allows assets to be uploaded to a specific website."""
+
+    def post(self, request, pk):
+        """Handle file uploads for a specific website identified by primary key."""
+        website = get_object_or_404(Website, pk=pk)
+
+        serializer = AssetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        image_count = 0
+        video_count = 0
+
+        for file_obj, file_type in serializer.validated_data["files"]:
+            Asset.objects.create(
+                website=website,
+                file=file_obj,
+                type=file_type,
+                size = file_obj.size,
+            )
+
+            if file_type == Asset.AssetType.IMAGE:
+                image_count += 1
+            elif file_type == Asset.AssetType.VIDEO:
+                video_count += 1
+
+        return Response(
+            {
+                "message": "Assets uploaded successfully.",
+                "images": image_count,
+                "videos": video_count,
+            },
+            status=status.HTTP_201_CREATED,
         )

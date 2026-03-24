@@ -92,3 +92,50 @@ class Page(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Asset(models.Model):
+    """Model representing an asset associated with a website."""
+
+    class AssetType(models.TextChoices):
+        IMAGE = "image", "Image"
+        VIDEO = "video", "Video"
+
+    website = models.ForeignKey(
+        Website,
+        on_delete=models.CASCADE,
+        related_name="assets",
+        help_text="The website to which this asset belongs.",
+    )
+    file = models.FileField(
+        upload_to=asset_upload_path,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=[
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "gif",
+                    "webp",
+                    "svg",
+                    "mp4",
+                    "mov",
+                    "avi",
+                    "mkv",
+                    "webm",
+                ]
+            )
+        ],
+        help_text="Uploaded asset file (image or video).",
+    )
+    type = models.CharField(
+        max_length=10,
+        choices=AssetType.choices,
+        help_text="Detected asset type.",
+    )
+    size = models.BigIntegerField(help_text="Size of the uploaded file in bytes.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    def __str__(self):
+        return f"{self.type} - {self.file.name}"

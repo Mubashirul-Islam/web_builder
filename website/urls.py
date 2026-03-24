@@ -10,4 +10,9 @@ urlpatterns = [
     path(
         "websites/<int:pk>/build/", views.WebsiteBuild.as_view(), name="website-build"
     ),
+    path(
+        "websites/<int:pk>/upload/",
+        views.AssetUpload.as_view(),
+        name="website-asset-upload",
+    ),
 ]

@@ -4,9 +4,14 @@ def asset_upload_path(instance, filename):
 
     if model == "Page":
         return f"{instance.website.name}/staging/pages/{filename}"
-    elif model == "Website":              
+    elif model == "Website":
         if filename.endswith((".css", ".js")):
             return f"{instance.name}/staging/static/{filename}"
-        
+
         return f"{instance.name}/staging/{filename}"
 
+    elif model == "Asset":
+        if instance.type == "image":
+            return f"{instance.website.name}/staging/asset/images/{filename}"
+        elif instance.type == "video":
+            return f"{instance.website.name}/staging/asset/videos/{filename}"
