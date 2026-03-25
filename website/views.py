@@ -164,12 +164,13 @@ class AssetUpload(APIView):
         image_count = 0
         video_count = 0
 
-        for file_obj, file_type in serializer.validated_data["files"]:
+        for file_obj, file_type, alt_text in serializer.validated_data:
             Asset.objects.create(
                 website=website,
                 file=file_obj,
                 type=file_type,
-                size = file_obj.size,
+                size=file_obj.size,
+                alt_text=alt_text,
             )
 
             if file_type == Asset.AssetType.IMAGE:

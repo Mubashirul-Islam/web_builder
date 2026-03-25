@@ -133,6 +133,12 @@ class Asset(models.Model):
         choices=AssetType.choices,
         help_text="Detected asset type.",
     )
+    alt_text = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Alternative text for the asset.",
+    )
     size = models.BigIntegerField(help_text="Size of the uploaded file in bytes.")
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True, db_index=True)

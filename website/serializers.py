@@ -42,9 +42,20 @@ class AssetSerializer(serializers.Serializer):
         child=serializers.FileField(),
     )
 
-    def validate_files(self, files):
+    alt_texts = serializers.ListField(
+        child=serializers.CharField(
+        ),
+    )
+
+    def validate(self, data):
+
+        if len(data["files"]) != len(data["alt_texts"]):
+            raise serializers.ValidationError(
+                "The number of files must match the number of alt_texts."
+            )
+
         validated = []
-        for f in files:
+        for f, alt_text in zip(data["files"], data["alt_texts"]):
             if f.content_type.startswith("image/"):
                 file_type = Asset.AssetType.IMAGE
             elif f.content_type.startswith("video/"):
@@ -53,5 +64,6 @@ class AssetSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     f"Unsupported file type: {f.name}. Allowed: images/videos only."
                 )
-            validated.append((f, file_type))
+            validated.append((f, file_type, alt_text))
+
         return validated
