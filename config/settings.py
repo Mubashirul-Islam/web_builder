@@ -136,4 +136,4 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 MEDIA_URL = "media/"
-MEDIA_ROOT = env("MEDIA_ROOT", default=str(BASE_DIR / "media / production"))
+MEDIA_ROOT = env("MEDIA_ROOT", default=str(BASE_DIR / "media" / "production"))
