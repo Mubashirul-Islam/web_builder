@@ -17,10 +17,12 @@ def build_website(website, mode):
     output_dir = Path(settings.MEDIA_ROOT) / website.name / mode
     pages_dir = output_dir / "pages"
     static_dir = output_dir / "static"
+    asset_dir = output_dir / "asset"
 
     output_dir.mkdir(parents=True, exist_ok=True)
     pages_dir.mkdir(parents=True, exist_ok=True)
     static_dir.mkdir(parents=True, exist_ok=True)
+    asset_dir.mkdir(parents=True, exist_ok=True)
 
     pages = website.pages.all()
 
@@ -30,6 +32,8 @@ def build_website(website, mode):
         _write_page(pages_dir, page.slug, html)
 
     _write_static_files(static_dir, css_content, js_content)
+
+    _write_asset_files(asset_dir, website)
 
 
 def _read_assets(website):
@@ -75,3 +79,14 @@ def _write_static_files(static_dir, css_content, js_content):
 
     css_path.write_text(css_content, encoding="utf-8")
     js_path.write_text(js_content, encoding="utf-8")
+
+def _write_asset_files(asset_dir, website):
+    for asset in website.assets.all():
+        target_dir = asset_dir / ("images" if asset.type == "image" else "videos")
+        target_dir.mkdir(exist_ok=True)
+
+        filename = Path(asset.file.name).name
+        target_path = target_dir / filename
+
+        with asset.file.open("rb") as src, target_path.open("wb") as dst:
+            dst.write(src.read())
