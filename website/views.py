@@ -11,6 +11,8 @@ from website.serializers import (
 )
 from website.models import Asset, Page, Website
 from website.services.build_website import build_website
+from website.utils.image_dimensions import get_image_dimensions
+from website.utils.video_dimensions import get_video_dimensions
 
 
 class websiteList(generics.ListCreateAPIView):
@@ -165,18 +167,25 @@ class AssetUpload(APIView):
         video_count = 0
 
         for file_obj, file_type, alt_text in serializer.validated_data:
+            
+            if file_type == Asset.AssetType.IMAGE:
+                h, w = get_image_dimensions(file_obj)
+                image_count += 1
+                
+            elif file_type == Asset.AssetType.VIDEO:
+                h, w = get_video_dimensions(file_obj)
+                video_count += 1
+
             Asset.objects.create(
                 website=website,
                 file=file_obj,
                 type=file_type,
                 size=file_obj.size,
                 alt_text=alt_text,
-            )
+                height=h,
+                width=w
 
-            if file_type == Asset.AssetType.IMAGE:
-                image_count += 1
-            elif file_type == Asset.AssetType.VIDEO:
-                video_count += 1
+            )
 
         return Response(
             {

@@ -139,6 +139,16 @@ class Asset(models.Model):
         default="",
         help_text="Alternative text for the asset.",
     )
+    height = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Height of the image in pixels.",
+    )
+    width = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Width of the image in pixels.",
+    )
     size = models.BigIntegerField(help_text="Size of the uploaded file in bytes.")
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True, db_index=True)
