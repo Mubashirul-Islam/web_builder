@@ -1,6 +1,8 @@
 from PIL import Image
 from moviepy import VideoFileClip
 
+from website.models import Asset
+
 
 class AssetDimensions:
     """A class to get the dimensions of an image or video file."""
@@ -10,9 +12,9 @@ class AssetDimensions:
         self.file_type = file_type
 
     def get_dimensions(self):
-        if self.file_type == "image":
+        if self.file_type == Asset.AssetType.IMAGE:
             return self.get_image_dimensions()
-        elif self.file_type == "video":
+        elif self.file_type == Asset.AssetType.VIDEO:
             return self.get_video_dimensions()
 
     def get_image_dimensions(self):

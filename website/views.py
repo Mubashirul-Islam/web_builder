@@ -168,7 +168,8 @@ class AssetUpload(APIView):
         }
 
         for file_obj, file_type, alt_text in serializer.validated_data:
-            width, height = AssetDimensions(file_obj, file_type).get_dimensions()
+            asset_dimensions = AssetDimensions(file_obj, file_type)
+            width, height = asset_dimensions.get_dimensions()
             counters[file_type] += 1
 
             Asset.objects.create(
