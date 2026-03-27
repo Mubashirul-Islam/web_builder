@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0002_asset_alt_text'),
+        ("website", "0002_asset_alt_text"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='asset',
-            name='height',
-            field=models.IntegerField(blank=True, help_text='Height of the image in pixels.', null=True),
+            model_name="asset",
+            name="height",
+            field=models.IntegerField(
+                blank=True, help_text="Height of the image in pixels.", null=True
+            ),
         ),
         migrations.AddField(
-            model_name='asset',
-            name='width',
-            field=models.IntegerField(blank=True, help_text='Width of the image in pixels.', null=True),
+            model_name="asset",
+            name="width",
+            field=models.IntegerField(
+                blank=True, help_text="Width of the image in pixels.", null=True
+            ),
         ),
     ]

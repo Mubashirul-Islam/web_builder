@@ -43,8 +43,7 @@ class AssetSerializer(serializers.Serializer):
     )
 
     alt_texts = serializers.ListField(
-        child=serializers.CharField(
-        ),
+        child=serializers.CharField(),
     )
 
     def validate(self, data):

@@ -21,10 +21,11 @@ class PageAdmin(admin.ModelAdmin):
     search_fields = ("title", "slug")
     list_filter = ("created_at", "modified_at")
 
+
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
     """Admin class for the Asset model."""
 
     list_display = ("file", "alt_text", "type", "website", "size", "modified_at")
     search_fields = ("file", "alt_text")
-    list_filter = ("type", "modified_at")    
+    list_filter = ("type", "modified_at")

@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0001_initial'),
+        ("website", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='asset',
-            name='alt_text',
-            field=models.CharField(blank=True, default='', help_text='Alternative text for the asset.', max_length=255),
+            model_name="asset",
+            name="alt_text",
+            field=models.CharField(
+                blank=True,
+                default="",
+                help_text="Alternative text for the asset.",
+                max_length=255,
+            ),
         ),
     ]

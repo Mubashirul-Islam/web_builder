@@ -80,6 +80,7 @@ def _write_static_files(static_dir, css_content, js_content):
     css_path.write_text(css_content, encoding="utf-8")
     js_path.write_text(js_content, encoding="utf-8")
 
+
 def _write_asset_files(asset_dir, website):
     for asset in website.assets.all():
         target_dir = asset_dir / ("images" if asset.type == "image" else "videos")

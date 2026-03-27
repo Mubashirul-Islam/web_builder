@@ -11,8 +11,7 @@ from website.serializers import (
 )
 from website.models import Asset, Page, Website
 from website.services.build_website import build_website
-from website.utils.image_dimensions import get_image_dimensions
-from website.utils.video_dimensions import get_video_dimensions
+from website.services.asset_dimensions import AssetDimensions
 
 
 class websiteList(generics.ListCreateAPIView):
@@ -163,18 +162,14 @@ class AssetUpload(APIView):
         serializer = AssetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        image_count = 0
-        video_count = 0
+        counters = {
+            Asset.AssetType.IMAGE: 0,
+            Asset.AssetType.VIDEO: 0,
+        }
 
         for file_obj, file_type, alt_text in serializer.validated_data:
-            
-            if file_type == Asset.AssetType.IMAGE:
-                h, w = get_image_dimensions(file_obj)
-                image_count += 1
-                
-            elif file_type == Asset.AssetType.VIDEO:
-                h, w = get_video_dimensions(file_obj)
-                video_count += 1
+            width, height = AssetDimensions(file_obj, file_type).get_dimensions()
+            counters[file_type] += 1
 
             Asset.objects.create(
                 website=website,
@@ -182,16 +177,15 @@ class AssetUpload(APIView):
                 type=file_type,
                 size=file_obj.size,
                 alt_text=alt_text,
-                height=h,
-                width=w
-
+                height=height,
+                width=width,
             )
 
         return Response(
             {
                 "message": "Assets uploaded successfully.",
-                "images": image_count,
-                "videos": video_count,
+                "images": counters[Asset.AssetType.IMAGE],
+                "videos": counters[Asset.AssetType.VIDEO],
             },
             status=status.HTTP_201_CREATED,
         )
