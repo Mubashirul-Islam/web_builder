@@ -2,7 +2,6 @@ from pathlib import Path
 
 from django.conf import settings
 
-from website.models import Asset
 from website.utils.read_file import read_file
 
 
@@ -84,7 +83,7 @@ def _write_static_files(static_dir, css_content, js_content):
 
 def _write_asset_files(asset_dir, website):
     for asset in website.assets.all():
-        target_dir = asset_dir / ("images" if asset.type == Asset.AssetType.IMAGE else "videos")
+        target_dir = asset_dir / asset.type
         target_dir.mkdir(exist_ok=True)
 
         filename = Path(asset.file.name).name

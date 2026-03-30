@@ -1,20 +1,22 @@
-from website.models import Page, Website, Asset
+from pathlib import Path
 
+from website.constants import ModelNames, AssetTypes
 
 def asset_upload_path(instance, filename):
     """Generate a dynamic upload path for website assets based on the instance and filename."""
+
     model = instance.__class__.__name__
 
-    if model == Page.__name__:
-        return f"{instance.website.name}/staging/pages/{filename}"
-    elif model == Website.__name__:
+    if model == ModelNames.PAGE:
+        return str(Path(instance.website.name) / "staging" / "pages" / filename)
+    elif model == ModelNames.WEBSITE:
         if filename.endswith((".css", ".js")):
-            return f"{instance.name}/staging/static/{filename}"
+            return str(Path(instance.name) / "staging" / "static" / filename)
 
-        return f"{instance.name}/staging/{filename}"
+        return str(Path(instance.name) / "staging" / filename)
 
-    elif model == Asset.__name__:
-        if instance.type == Asset.AssetType.IMAGE:
-            return f"{instance.website.name}/staging/asset/images/{filename}"
-        elif instance.type == Asset.AssetType.VIDEO:
-            return f"{instance.website.name}/staging/asset/videos/{filename}"
+    elif model == ModelNames.ASSET:
+        if instance.type == AssetTypes.IMAGE:
+            return str(Path(instance.website.name) / "staging" / "asset" / "images" / filename)
+        elif instance.type == AssetTypes.VIDEO:
+            return str(Path(instance.website.name) / "staging" / "asset" / "videos" / filename)
