@@ -10,7 +10,6 @@ from website.serializers import (
     WebsiteSerializer,
 )
 from website.models import Asset, Page, Website
-from website.services import asset_dimensions
 from website.services.build_website import build_website
 from website.services.asset_dimensions import AssetDimensions
 

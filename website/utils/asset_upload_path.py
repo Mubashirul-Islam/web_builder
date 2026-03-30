@@ -2,6 +2,7 @@ from pathlib import Path
 
 from website.constants import ModelNames, AssetTypes
 
+
 def asset_upload_path(instance, filename):
     """Generate a dynamic upload path for website assets based on the instance and filename."""
 
@@ -17,6 +18,10 @@ def asset_upload_path(instance, filename):
 
     elif model == ModelNames.ASSET:
         if instance.type == AssetTypes.IMAGE:
-            return str(Path(instance.website.name) / "staging" / "asset" / "images" / filename)
+            return str(
+                Path(instance.website.name) / "staging" / "asset" / "images" / filename
+            )
         elif instance.type == AssetTypes.VIDEO:
-            return str(Path(instance.website.name) / "staging" / "asset" / "videos" / filename)
+            return str(
+                Path(instance.website.name) / "staging" / "asset" / "videos" / filename
+            )
