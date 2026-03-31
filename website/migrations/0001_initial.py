@@ -2,7 +2,7 @@
 
 import django.core.validators
 import django.db.models.deletion
-import website.utils.asset_upload_path
+import website.utils.upload_path
 from django.conf import settings
 from django.db import migrations, models
 
@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                     "css",
                     models.FileField(
                         help_text="The CSS file for the website.",
-                        upload_to=website.utils.asset_upload_path.asset_upload_path,
+                        upload_to=website.utils.upload_path.upload_path,
                         validators=[
                             django.core.validators.FileExtensionValidator(
                                 allowed_extensions=["css"]
@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
                     "js",
                     models.FileField(
                         help_text="The JavaScript file for the website.",
-                        upload_to=website.utils.asset_upload_path.asset_upload_path,
+                        upload_to=website.utils.upload_path.upload_path,
                         validators=[
                             django.core.validators.FileExtensionValidator(
                                 allowed_extensions=["js"]
@@ -79,7 +79,7 @@ class Migration(migrations.Migration):
                     "header",
                     models.FileField(
                         help_text="The header file for the website.",
-                        upload_to=website.utils.asset_upload_path.asset_upload_path,
+                        upload_to=website.utils.upload_path.upload_path,
                         validators=[
                             django.core.validators.FileExtensionValidator(
                                 allowed_extensions=["txt"]
@@ -91,7 +91,7 @@ class Migration(migrations.Migration):
                     "footer",
                     models.FileField(
                         help_text="The footer file for the website.",
-                        upload_to=website.utils.asset_upload_path.asset_upload_path,
+                        upload_to=website.utils.upload_path.upload_path,
                         validators=[
                             django.core.validators.FileExtensionValidator(
                                 allowed_extensions=["txt"]
@@ -168,7 +168,7 @@ class Migration(migrations.Migration):
                     "content",
                     models.FileField(
                         help_text="The content file for the page.",
-                        upload_to=website.utils.asset_upload_path.asset_upload_path,
+                        upload_to=website.utils.upload_path.upload_path,
                         validators=[
                             django.core.validators.FileExtensionValidator(
                                 allowed_extensions=["txt"]
@@ -205,7 +205,7 @@ class Migration(migrations.Migration):
                     "file",
                     models.FileField(
                         help_text="Uploaded asset file (image or video).",
-                        upload_to=website.utils.asset_upload_path.asset_upload_path,
+                        upload_to=website.utils.upload_path.upload_path,
                         validators=[
                             django.core.validators.FileExtensionValidator(
                                 allowed_extensions=[

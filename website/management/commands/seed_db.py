@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
     help = "Seed the database with initial data for testing and development."
 
-    def handle(self, *args, **options):
+    def handle(self, *args: object, **options: object) -> None:
         """Seed the database with sample users, websites, and pages."""
 
         for _ in range(5):

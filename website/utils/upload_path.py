@@ -3,7 +3,7 @@ from pathlib import Path
 from website.constants import ModelNames, AssetTypes
 
 
-def asset_upload_path(instance, filename):
+def upload_path(instance, filename: str) -> str:
     """Generate a dynamic upload path for website assets based on the instance and filename."""
 
     model = instance.__class__.__name__
@@ -25,3 +25,5 @@ def asset_upload_path(instance, filename):
             return str(
                 Path(instance.website.name) / "staging" / "asset" / "videos" / filename
             )
+
+    raise ValueError(f"Unsupported upload path context for model '{model}'.")

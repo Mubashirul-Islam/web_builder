@@ -1,3 +1,4 @@
+from django.core.files.uploadedfile import UploadedFile
 from rest_framework import serializers
 from website.models import Asset, Page, Website
 
@@ -25,7 +26,7 @@ class WebsiteBuildSerializer(serializers.Serializer):
 
     mode = serializers.ChoiceField(choices=["preview", "live"])
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, str]) -> dict[str, str]:
         """Validate that the website has at least one page before building."""
 
         if not self.instance.pages.exists():
@@ -46,7 +47,10 @@ class AssetSerializer(serializers.Serializer):
         child=serializers.CharField(),
     )
 
-    def validate(self, data):
+    def validate(
+        self, data: dict[str, list[UploadedFile | str]]
+    ) -> list[tuple[UploadedFile, str, str]]:
+        """Validate upload payload and normalize each item into a typed tuple."""
 
         if len(data["files"]) != len(data["alt_texts"]):
             raise serializers.ValidationError(

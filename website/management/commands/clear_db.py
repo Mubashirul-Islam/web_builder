@@ -8,7 +8,7 @@ class Command(BaseCommand):
 
     help = "Clear all data from the database for testing and development."
 
-    def handle(self, *args, **options):
+    def handle(self, *args: object, **options: object) -> None:
         """Clear all data from the database, including users, websites, and pages."""
         # Delete all pages
         Page.objects.all().delete()

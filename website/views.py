@@ -10,7 +10,7 @@ from website.serializers import (
     WebsiteSerializer,
 )
 from website.models import Asset, Page, Website
-from website.services.build_website import build_website
+from website.services.build_website import WebsiteBuilder
 from website.services.asset_dimensions import AssetDimensions
 
 
@@ -137,7 +137,7 @@ class WebsiteBuild(APIView):
         mode = serializer.validated_data["mode"]
 
         try:
-            build_website(website, mode)
+            WebsiteBuilder.build_website(website, mode)
         except Exception:
             return Response(
                 {"error": "Build process failed."},

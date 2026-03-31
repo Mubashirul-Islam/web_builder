@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import FileExtensionValidator
 
 from django.contrib.auth.models import User
-from website.utils.asset_upload_path import asset_upload_path
+from website.utils.upload_path import upload_path
 
 
 class Website(models.Model):
@@ -28,29 +28,30 @@ class Website(models.Model):
         help_text="The URL where the website will be hosted.",
     )
     css = models.FileField(
-        upload_to=asset_upload_path,
+        upload_to=upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["css"])],
         help_text="The CSS file for the website.",
     )
     js = models.FileField(
-        upload_to=asset_upload_path,
+        upload_to=upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["js"])],
         help_text="The JavaScript file for the website.",
     )
     header = models.FileField(
-        upload_to=asset_upload_path,
+        upload_to=upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["txt"])],
         help_text="The header file for the website.",
     )
     footer = models.FileField(
-        upload_to=asset_upload_path,
+        upload_to=upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["txt"])],
         help_text="The footer file for the website.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True, db_index=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return the website name for admin and logs."""
         return self.name
 
 
@@ -83,14 +84,15 @@ class Page(models.Model):
         help_text="The URL of the Open Graph image for the page.",
     )
     content = models.FileField(
-        upload_to=asset_upload_path,
+        upload_to=upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["txt"])],
         help_text="The content file for the page.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True, db_index=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return the page title for admin and logs."""
         return self.title
 
 
@@ -98,6 +100,8 @@ class Asset(models.Model):
     """Model representing an asset associated with a website."""
 
     class AssetType(models.TextChoices):
+        """Allowed asset media categories."""
+
         IMAGE = "image", "Image"
         VIDEO = "video", "Video"
 
@@ -108,7 +112,7 @@ class Asset(models.Model):
         help_text="The website to which this asset belongs.",
     )
     file = models.FileField(
-        upload_to=asset_upload_path,
+        upload_to=upload_path,
         validators=[
             FileExtensionValidator(
                 allowed_extensions=[
@@ -153,5 +157,6 @@ class Asset(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True, db_index=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return a readable label with type and file name."""
         return f"{self.type} - {self.file.name}"
