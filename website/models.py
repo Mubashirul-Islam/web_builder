@@ -121,7 +121,6 @@ class Asset(models.Model):
                     "png",
                     "gif",
                     "webp",
-                    "svg",
                     "mp4",
                     "mov",
                     "avi",

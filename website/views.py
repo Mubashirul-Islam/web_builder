@@ -10,6 +10,7 @@ from website.serializers import (
     WebsiteSerializer,
 )
 from website.models import Asset, Page, Website
+from website.services.asset_compression import AssetCompression
 from website.services.build_website import WebsiteBuilder
 from website.services.asset_dimensions import AssetDimensions
 
@@ -168,14 +169,15 @@ class AssetUpload(APIView):
         }
 
         for file_obj, file_type, alt_text in serializer.validated_data:
-            width, height = AssetDimensions.get_dimensions(file_obj, file_type)
+            compressed_file = AssetCompression.compress(file_obj, file_type)
+            width, height = AssetDimensions.get_dimensions(compressed_file, file_type)
             counters[file_type] += 1
 
             Asset.objects.create(
                 website=website,
-                file=file_obj,
+                file=compressed_file,
                 type=file_type,
-                size=file_obj.size,
+                size=compressed_file.size,
                 alt_text=alt_text,
                 height=height,
                 width=width,

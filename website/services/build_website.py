@@ -51,7 +51,7 @@ class WebsiteBuilder:
 
     @staticmethod
     def _read_contents(website: Website) -> tuple[str, str, str, str]:
-        '''Read the content of the website's header, footer, JavaScript, and CSS files.'''
+        """Read the content of the website's header, footer, JavaScript, and CSS files."""
         return (
             read_file(website.header),
             read_file(website.footer),
@@ -60,8 +60,10 @@ class WebsiteBuilder:
         )
 
     @staticmethod
-    def _render_page_html(page: Page, header_content: str, page_content: str, footer_content: str) -> str:
-        '''Render the full HTML for a page by combining its content with the website header and footer.'''
+    def _render_page_html(
+        page: Page, header_content: str, page_content: str, footer_content: str
+    ) -> str:
+        """Render the full HTML for a page by combining its content with the website header and footer."""
 
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -91,7 +93,9 @@ class WebsiteBuilder:
         page_path.write_text(html, encoding="utf-8")
 
     @staticmethod
-    def _write_static_files(static_dir: Path, css_content: str, js_content: str) -> None:
+    def _write_static_files(
+        static_dir: Path, css_content: str, js_content: str
+    ) -> None:
         """Write website-level CSS and JavaScript assets."""
         css_path = static_dir / "style.css"
         js_path = static_dir / "script.js"
