@@ -15,4 +15,9 @@ urlpatterns = [
         views.AssetUpload.as_view(),
         name="website-asset-upload",
     ),
+
+    path("websites/<int:pk>/edit/", views.WebsiteEditView.as_view(), name="website-edit"),
+    #path("websites/<int:pk>/edit/refresh/", views.WebsiteEditRefresh.as_view(), name="website-edit-refresh"),
+    #path("websites/<int:pk>/edit/save/", views.WebsiteEditSave.as_view(), name="website-edit-save"),
+    #path("websites/<int:pk>/edit/exit/", views.WebsiteEditExit.as_view(), name="website-edit-exit"),
 ]

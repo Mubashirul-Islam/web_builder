@@ -1,3 +1,5 @@
+from functools import cache
+
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, generics, status
 from rest_framework.response import Response
@@ -5,6 +7,7 @@ from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 from website.serializers import (
     AssetSerializer,
+    LockStatusSerializer,
     PageSerializer,
     WebsiteBuildSerializer,
     WebsiteSerializer,
@@ -191,3 +194,81 @@ class AssetUpload(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+class WebsiteEditView(APIView):
+    """
+    Attempt to acquire the edit lock for `pk`.
+ 
+    Flow:
+      1. Check whether website_pk is in Redis.
+      2a. Key absent  (False) → store lock, return edit data, broadcast "lock acquired".
+      2b. Key present (True)  → check same user?
+            Same user  → refresh TTL, return edit data (re-entry / page refresh).
+            Other user → 423 Locked.
+    """
+
+    def get(self, request, pk):
+        website = get_object_or_404(Website, pk=pk)
+        user_id = 1 
+        #request.user.id
+ 
+        acquired = acquire_lock(pk, user_id)
+ 
+        if not acquired:
+            holder = get_lock(pk)
+            data = LockStatusSerializer(
+                {
+                    "status": "locked",
+                    "message": "Website being edited by another user, try again later.",
+                    "locked_by": holder.get("user_id") if holder else None,
+                }
+            ).data
+            return Response(data, status=status.HTTP_423_LOCKED)
+ 
+        #broadcast_lock_acquired(pk, user_id)
+
+        LOCK_KEY_PREFIX = "website_lock"
+        LOCK_TTL_SECONDS = 5 * 60  # 5 minutes
+
+        def get_lock(website_pk: int) -> dict | None:
+            """
+            Return the lock data dict {"user_id": ..., "ttl": ...} if the lock exists,
+            or None if there is no active lock.
+            """
+            return cache.get(_lock_key(website_pk))
+        
+        def acquire_lock(website_pk: int, user_id: int) -> bool:
+            """
+            Attempt to atomically acquire the lock for `website_pk`.
+            Uses add() which only sets the key if it does NOT already exist.
+            Returns True if the lock was acquired, False if already held by someone else.
+            If already held by the SAME user, refreshes TTL and returns True.
+            """
+            key = _lock_key(website_pk)
+            lock_data = {"user_id": user_id}
+        
+            # add() is atomic: sets only if key absent (NX behaviour)
+            acquired = cache.add(key, lock_data, timeout=LOCK_TTL_SECONDS)
+            if acquired:
+
+                return True
+        
+            # Key already exists — check if it belongs to this user
+            existing = cache.get(key)
+            if existing and existing.get("user_id") == user_id:
+                # Same user re-entering (e.g. page refresh) — refresh TTL
+                cache.set(key, lock_data, timeout=LOCK_TTL_SECONDS)
+                return True
+        
+            return False
+        
+        def _lock_key(website_pk: int) -> str:
+            return f"{LOCK_KEY_PREFIX}:{website_pk}"
+ 
+        return Response(
+            {
+                "status": "ok",
+                "website": WebsiteSerializer(website).data,
+            }
+        )
+        
