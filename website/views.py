@@ -1,5 +1,3 @@
-from functools import cache
-
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, generics, status
 from rest_framework.response import Response
@@ -16,6 +14,7 @@ from website.models import Asset, Page, Website
 from website.services.asset_compression import AssetCompression
 from website.services.build_website import WebsiteBuilder
 from website.services.asset_dimensions import AssetDimensions
+from website.services.lock_website import acquire_lock, check_lock_for_save, locked_by, refresh_lock, release_lock
 
 
 class websiteList(generics.ListCreateAPIView):
@@ -195,7 +194,8 @@ class AssetUpload(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-class WebsiteEditView(APIView):
+
+class WebsiteEdit(APIView):
     """
     Attempt to acquire the edit lock for `pk`.
  
@@ -206,69 +206,110 @@ class WebsiteEditView(APIView):
             Same user  → refresh TTL, return edit data (re-entry / page refresh).
             Other user → 423 Locked.
     """
-
+ 
     def get(self, request, pk):
         website = get_object_or_404(Website, pk=pk)
-        user_id = 1 
-        #request.user.id
- 
+        # user_id = request.user.id
+        user_id = request.query_params.get("user_id")  # TODO: replace with actual user ID from auth system
+
         acquired = acquire_lock(pk, user_id)
  
         if not acquired:
-            holder = get_lock(pk)
+            holder = locked_by(pk)
             data = LockStatusSerializer(
                 {
                     "status": "locked",
                     "message": "Website being edited by another user, try again later.",
-                    "locked_by": holder.get("user_id") if holder else None,
+                    "locked_by": holder if holder else None,
                 }
             ).data
             return Response(data, status=status.HTTP_423_LOCKED)
  
-        #broadcast_lock_acquired(pk, user_id)
-
-        LOCK_KEY_PREFIX = "website_lock"
-        LOCK_TTL_SECONDS = 5 * 60  # 5 minutes
-
-        def get_lock(website_pk: int) -> dict | None:
-            """
-            Return the lock data dict {"user_id": ..., "ttl": ...} if the lock exists,
-            or None if there is no active lock.
-            """
-            return cache.get(_lock_key(website_pk))
-        
-        def acquire_lock(website_pk: int, user_id: int) -> bool:
-            """
-            Attempt to atomically acquire the lock for `website_pk`.
-            Uses add() which only sets the key if it does NOT already exist.
-            Returns True if the lock was acquired, False if already held by someone else.
-            If already held by the SAME user, refreshes TTL and returns True.
-            """
-            key = _lock_key(website_pk)
-            lock_data = {"user_id": user_id}
-        
-            # add() is atomic: sets only if key absent (NX behaviour)
-            acquired = cache.add(key, lock_data, timeout=LOCK_TTL_SECONDS)
-            if acquired:
-
-                return True
-        
-            # Key already exists — check if it belongs to this user
-            existing = cache.get(key)
-            if existing and existing.get("user_id") == user_id:
-                # Same user re-entering (e.g. page refresh) — refresh TTL
-                cache.set(key, lock_data, timeout=LOCK_TTL_SECONDS)
-                return True
-        
-            return False
-        
-        def _lock_key(website_pk: int) -> str:
-            return f"{LOCK_KEY_PREFIX}:{website_pk}"
+        # broadcast_lock_acquired(pk, user_id)
  
         return Response(
             {
                 "status": "ok",
                 "website": WebsiteSerializer(website).data,
-            }
+            },
+            status=status.HTTP_200_OK,
         )
-        
+
+
+class WebsiteEditRefresh(APIView):
+    """
+    Heartbeat endpoint — called by the client every ~2 minutes.
+    Extends the Redis TTL so the lock doesn't expire while the user is active.
+ 
+    Returns 409 if the lock has already expired between heartbeats, prompting
+    the client to warn the user that their session has timed out.
+    """
+ 
+    def post(self, request, pk):
+        website = get_object_or_404(Website, pk=pk)
+        #user_id = request.user.id
+        user_id = request.query_params.get("user_id")  # TODO: replace with actual user ID from auth system
+
+        refreshed = refresh_lock(pk, user_id)
+ 
+        if not refreshed:
+            return Response(
+                {
+                    "status": "expired",
+                    "message": "Your editing session has expired. Please reload to re-acquire the lock.",
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+ 
+        return Response({"status": "ok"}, status=status.HTTP_200_OK)        
+    
+class WebsiteEditSave(APIView):
+    """
+    Persist the user's edits to the database.
+ 
+    Flow:
+      1. Validate request body with SaveContentSerializer.
+      2. Check Lock exists?
+           False → 409 session expired (lock lost since page load).
+      3. Check Same user?
+           False → 403 forbidden.
+           True  → save to DB, delete Redis key, broadcast "lock released".
+    """
+
+    def post(self, request, pk):
+        website = get_object_or_404(Website, pk=pk)
+        #user_id = request.user.id
+        user_id = request.query_params.get("user_id")  # TODO: replace with actual user ID from auth system
+ 
+        lock_exists, is_same_user = check_lock_for_save(pk, user_id)    
+ 
+        if not lock_exists:
+            return Response(
+                {
+                    "status": "expired",
+                    "message": "Editing session expired. Your changes could not be saved.",
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+ 
+        if not is_same_user:
+            return Response(
+                {"status": "forbidden", "message": "You do not hold the edit lock."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+ 
+        # Save to DB
+
+ 
+        # Release lock then broadcast
+        release_lock(pk, user_id)
+        # broadcast_lock_released(pk) TODO: implement this to notify other users waiting on the lock
+ 
+        return Response(
+            {
+                "status": "ok",
+                "website": WebsiteSerializer(website).data,
+            },
+            status=status.HTTP_200_OK,
+
+        )    
