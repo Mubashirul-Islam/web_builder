@@ -3,7 +3,9 @@ from django.core.cache import cache
 
 
 LOCK_TTL_SECONDS = getattr(settings, "WEBSITE_LOCK_TTL_SECONDS", 300)  # 5 minutes
-HEARTBEAT_INTERVAL_SECONDS = getattr(settings, "WEBSITE_HEARTBEAT_INTERVAL_SECONDS", 120)  # 2 minutes
+HEARTBEAT_INTERVAL_SECONDS = getattr(
+    settings, "WEBSITE_HEARTBEAT_INTERVAL_SECONDS", 120
+)  # 2 minutes
 
 
 def locked_by(website_pk: int) -> dict | None:

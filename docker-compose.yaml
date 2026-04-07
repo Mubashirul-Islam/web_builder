@@ -16,6 +16,7 @@ services:
     container_name: redis-server
     ports:
       - "${REDIS_PORT}:6379"  
+    restart: always
 
 volumes:
   postgres_data:

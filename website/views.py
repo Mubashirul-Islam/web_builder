@@ -14,7 +14,13 @@ from website.models import Asset, Page, Website
 from website.services.asset_compression import AssetCompression
 from website.services.build_website import WebsiteBuilder
 from website.services.asset_dimensions import AssetDimensions
-from website.services.lock_website import acquire_lock, check_lock_for_save, locked_by, refresh_lock, release_lock
+from website.services.lock_website import (
+    acquire_lock,
+    check_lock_for_save,
+    locked_by,
+    refresh_lock,
+    release_lock,
+)
 
 
 class websiteList(generics.ListCreateAPIView):
@@ -198,7 +204,7 @@ class AssetUpload(APIView):
 class WebsiteEdit(APIView):
     """
     Attempt to acquire the edit lock for `pk`.
- 
+
     Flow:
       1. Check whether website_pk is in Redis.
       2a. Key absent  (False) → store lock, return edit data, broadcast "lock acquired".
@@ -206,14 +212,16 @@ class WebsiteEdit(APIView):
             Same user  → refresh TTL, return edit data (re-entry / page refresh).
             Other user → 423 Locked.
     """
- 
+
     def get(self, request, pk):
         website = get_object_or_404(Website, pk=pk)
         # user_id = request.user.id
-        user_id = request.query_params.get("user_id")  # TODO: replace with actual user ID from auth system
+        user_id = request.query_params.get(
+            "user_id"
+        )  # TODO: replace with actual user ID from auth system
 
         acquired = acquire_lock(pk, user_id)
- 
+
         if not acquired:
             holder = locked_by(pk)
             data = LockStatusSerializer(
@@ -224,9 +232,9 @@ class WebsiteEdit(APIView):
                 }
             ).data
             return Response(data, status=status.HTTP_423_LOCKED)
- 
-        # broadcast_lock_acquired(pk, user_id)
- 
+
+        # broadcast_lock_acquired(pk, user_id) TODO: implement this to notify other users that the lock is now held
+
         return Response(
             {
                 "status": "ok",
@@ -240,18 +248,20 @@ class WebsiteEditRefresh(APIView):
     """
     Heartbeat endpoint — called by the client every ~2 minutes.
     Extends the Redis TTL so the lock doesn't expire while the user is active.
- 
+
     Returns 409 if the lock has already expired between heartbeats, prompting
     the client to warn the user that their session has timed out.
     """
- 
+
     def post(self, request, pk):
-        website = get_object_or_404(Website, pk=pk)
-        #user_id = request.user.id
-        user_id = request.query_params.get("user_id")  # TODO: replace with actual user ID from auth system
+        get_object_or_404(Website, pk=pk)
+        # user_id = request.user.id
+        user_id = request.query_params.get(
+            "user_id"
+        )  # TODO: replace with actual user ID from auth system
 
         refreshed = refresh_lock(pk, user_id)
- 
+
         if not refreshed:
             return Response(
                 {
@@ -260,13 +270,14 @@ class WebsiteEditRefresh(APIView):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
- 
-        return Response({"status": "ok"}, status=status.HTTP_200_OK)        
-    
+
+        return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
+
 class WebsiteEditSave(APIView):
     """
     Persist the user's edits to the database.
- 
+
     Flow:
       1. Validate request body with SaveContentSerializer.
       2. Check Lock exists?
@@ -278,11 +289,13 @@ class WebsiteEditSave(APIView):
 
     def post(self, request, pk):
         website = get_object_or_404(Website, pk=pk)
-        #user_id = request.user.id
-        user_id = request.query_params.get("user_id")  # TODO: replace with actual user ID from auth system
- 
-        lock_exists, is_same_user = check_lock_for_save(pk, user_id)    
- 
+        # user_id = request.user.id
+        user_id = request.query_params.get(
+            "user_id"
+        )  # TODO: replace with actual user ID from auth system
+
+        lock_exists, is_same_user = check_lock_for_save(pk, user_id)
+
         if not lock_exists:
             return Response(
                 {
@@ -291,25 +304,45 @@ class WebsiteEditSave(APIView):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
- 
+
         if not is_same_user:
             return Response(
                 {"status": "forbidden", "message": "You do not hold the edit lock."},
                 status=status.HTTP_403_FORBIDDEN,
             )
- 
-        # Save to DB
 
- 
+        # TODO: persist the changes to the database here
+
         # Release lock then broadcast
         release_lock(pk, user_id)
         # broadcast_lock_released(pk) TODO: implement this to notify other users waiting on the lock
- 
+
         return Response(
             {
                 "status": "ok",
                 "website": WebsiteSerializer(website).data,
             },
             status=status.HTTP_200_OK,
+        )
 
-        )    
+
+class WebsiteEditExit(APIView):
+    """
+    Called on page unload (beforeunload / visibilitychange).
+    Releases the Redis lock without saving, then broadcasts "lock released".
+
+    Intentionally forgiving — returns 200 even if the lock was already
+    expired, so the browser's sendBeacon() call doesn't trigger retries.
+    """
+
+    def post(self, request, pk):
+        get_object_or_404(Website, pk=pk)
+        # user_id = request.user.id
+        user_id = request.query_params.get(
+            "user_id"
+        )  # TODO: replace with actual user ID from auth system
+
+        release_lock(pk, user_id)  # idempotent
+        # broadcast_lock_released(pk) TODO: implement this to notify other users waiting on the lock
+
+        return Response({"status": "ok"}, status=status.HTTP_200_OK)

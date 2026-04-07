@@ -70,11 +70,11 @@ class AssetSerializer(serializers.Serializer):
             validated.append((f, file_type, alt_text))
 
         return validated
-    
+
 
 class LockStatusSerializer(serializers.Serializer):
     """Returned on 423 when another user holds the lock."""
- 
+
     status = serializers.CharField()
     message = serializers.CharField()
     locked_by = serializers.IntegerField(allow_null=True)

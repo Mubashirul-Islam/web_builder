@@ -44,7 +44,13 @@ class AssetCompression:
             if fmt in {"JPEG", "JPG"}:
                 if image.mode in {"RGBA", "P"}:
                     image = image.convert("RGB")
-                image.save(output, format="JPEG", optimize=True, quality=cls.IMAGE_QUALITY, progressive=True)
+                image.save(
+                    output,
+                    format="JPEG",
+                    optimize=True,
+                    quality=cls.IMAGE_QUALITY,
+                    progressive=True,
+                )
             elif fmt == "PNG":
                 image.save(output, format="PNG", optimize=True, compress_level=9)
             elif fmt == "WEBP":
@@ -96,7 +102,9 @@ class AssetCompression:
                 return SimpleUploadedFile(
                     name=getattr(file_obj, "name", "upload.mp4"),
                     content=f.read(),
-                    content_type=getattr(file_obj, "content_type", "application/octet-stream"),
+                    content_type=getattr(
+                        file_obj, "content_type", "application/octet-stream"
+                    ),
                 )
         finally:
             file_obj.seek(0)
