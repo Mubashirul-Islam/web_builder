@@ -12,6 +12,7 @@ from website.serializers import (
 )
 from website.models import Asset, Page, Website
 from website.services.asset_compression import AssetCompression
+from website.services.broadcasts import broadcast_lock_acquired, broadcast_lock_released
 from website.services.build_website import WebsiteBuilder
 from website.services.asset_dimensions import AssetDimensions
 from website.services.lock_website import (
@@ -233,7 +234,7 @@ class WebsiteEdit(APIView):
             ).data
             return Response(data, status=status.HTTP_423_LOCKED)
 
-        # broadcast_lock_acquired(pk, user_id) TODO: implement this to notify other users that the lock is now held
+        broadcast_lock_acquired(pk, user_id)
 
         return Response(
             {
@@ -315,7 +316,7 @@ class WebsiteEditSave(APIView):
 
         # Release lock then broadcast
         release_lock(pk, user_id)
-        # broadcast_lock_released(pk) TODO: implement this to notify other users waiting on the lock
+        broadcast_lock_released(pk)
 
         return Response(
             {
