@@ -12,7 +12,9 @@ Web Builder is a Django + Django REST Framework backend for:
 - Python 3
 - Django 6.0.2
 - Django REST Framework 3.16.1
+- Django Channels 4.3.2 + Daphne
 - PostgreSQL (Docker Compose)
+- Redis (cache, channel layer, and edit-lock state)
 - django-environ for environment-based settings
 - Faker for development data seeding
 - ruff for linting and formatting
@@ -87,6 +89,7 @@ DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
 
 DATABASE_URL=postgres://myuser:mypassword@127.0.0.1:5432/mydatabase
+REDIS_URL=redis://127.0.0.1:6379/
 
 POSTGRES_DB=mydatabase
 POSTGRES_USER=myuser
@@ -134,7 +137,13 @@ python manage.py migrate
 python manage.py seed_db
 ```
 
-7. Start the API server.
+7. Start Redis (required for edit-lock and WebSocket features).
+
+```bash
+redis-server
+```
+
+8. Start the API server.
 
 ```bash
 python manage.py runserver
@@ -150,33 +159,44 @@ Base prefix: /api/
 
 - GET /api/websites/
 - POST /api/websites/ (multipart/form-data)
-- GET /api/websites/`<id>`/
-- PUT /api/websites/`<id>`/ (multipart/form-data)
-- PATCH /api/websites/`<id>`/
-- DELETE /api/websites/`<id>`/
-- POST /api/websites/`<id>`/build/?mode=preview|live
-- POST /api/websites/`<id>`/upload/ (multipart/form-data)
+- GET /api/websites/<id>/
+- PUT /api/websites/<id>/ (multipart/form-data)
+- PATCH /api/websites/<id>/
+- DELETE /api/websites/<id>/
+- POST /api/websites/<id>/build/?mode=preview|live
+- POST /api/websites/<id>/upload/ (multipart/form-data)
+- GET /api/websites/<id>/edit/?user_id=<user_id>
+- POST /api/websites/<id>/edit/refresh/?user_id=<user_id>
+- POST /api/websites/<id>/edit/save/?user_id=<user_id>
+- POST /api/websites/<id>/edit/exit/?user_id=<user_id>
 
 List query parameters:
 
 - search=<name_fragment>
 - ordering=created_at|modified_at (prefix with - for descending)
-- limit=`<n>`&offset=`<n>`
+- limit=<n>&offset=<n>
 
 ### Pages
 
 - GET /api/pages/
 - POST /api/pages/ (multipart/form-data)
-- GET /api/pages/`<id>`/
-- PUT /api/pages/`<id>`/ (multipart/form-data)
-- PATCH /api/pages/`<id>`/
-- DELETE /api/pages/`<id>`/
+- GET /api/pages/<id>/
+- PUT /api/pages/<id>/ (multipart/form-data)
+- PATCH /api/pages/<id>/
+- DELETE /api/pages/<id>/
 
 List query parameters:
 
 - search=<title_fragment>
 - ordering=created_at|modified_at (prefix with - for descending)
-- limit=`<n>`&offset=`<n>`
+- limit=<n>&offset=<n>
+
+### WebSocket
+
+- WS /ws/website/<website_pk>/
+- Emits lock events:
+	- lock_acquired with user_id and website_pk
+	- lock_released with website_pk
 
 ### Notes
 
@@ -184,6 +204,7 @@ List query parameters:
 - A website must have at least one page before build.
 - Asset upload expects two list fields with matching lengths: files and alt_texts.
 - Asset upload supports only image/* and video/* content types.
+- Edit-lock HTTP endpoints currently require a user_id query parameter.
 
 ## Build Output
 

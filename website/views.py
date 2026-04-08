@@ -1,11 +1,13 @@
+import os
+
 from django.shortcuts import get_object_or_404
+import psutil
 from rest_framework import filters, generics, status
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 from website.serializers import (
     AssetSerializer,
-    LockStatusSerializer,
     PageSerializer,
     WebsiteBuildSerializer,
     WebsiteSerializer,
@@ -160,7 +162,7 @@ class AssetUpload(APIView):
     """API endpoint that allows assets to be uploaded to a specific website."""
 
     def post(self, request, pk):
-        """Handle file uploads for a specific website identified by primary key."""        
+        """Handle file uploads for a specific website identified by primary key."""
         website = get_object_or_404(Website, pk=pk)
 
         serializer = AssetSerializer(data=request.data)
@@ -210,20 +212,19 @@ class WebsiteEdit(APIView):
 
         if not acquired:
             holder = WebsiteLock.locked_by(pk)
-            data = LockStatusSerializer(
+            return Response(
                 {
-                    "status": "locked",
                     "message": "Website being edited by another user, try again later.",
                     "locked_by": holder if holder else None,
-                }
-            ).data
-            return Response(data, status=status.HTTP_423_LOCKED)
+                },
+                status=status.HTTP_423_LOCKED,
+            )
 
         Broadcast.lock_acquired(pk, user_id)
 
         return Response(
             {
-                "status": "ok",
+                "message": "Editing session started.",
                 "website": WebsiteSerializer(website).data,
             },
             status=status.HTTP_200_OK,
@@ -245,13 +246,14 @@ class WebsiteEditRefresh(APIView):
         if not refreshed:
             return Response(
                 {
-                    "status": "expired",
-                    "message": "Your editing session has expired. Please reload to re-acquire the lock.",
+                    "message": "Editing session expired.",
                 },
                 status=status.HTTP_409_CONFLICT,
             )
 
-        return Response({"status": "ok"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Editing session refreshed."}, status=status.HTTP_200_OK
+        )
 
 
 class WebsiteEditSave(APIView):
@@ -269,15 +271,16 @@ class WebsiteEditSave(APIView):
         if not lock_exists:
             return Response(
                 {
-                    "status": "expired",
-                    "message": "Editing session expired. Your changes could not be saved.",
+                    "message": "Editing session expired. Changes could not be saved.",
                 },
                 status=status.HTTP_409_CONFLICT,
             )
 
         if not is_same_user:
             return Response(
-                {"status": "forbidden", "message": "You do not hold the edit lock."},
+                {
+                    "message": "Editing session expired. Website being edited by another user.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -289,7 +292,7 @@ class WebsiteEditSave(APIView):
 
         return Response(
             {
-                "status": "ok",
+                "message": "Changes saved successfully.",
                 "website": WebsiteSerializer(website).data,
             },
             status=status.HTTP_200_OK,
@@ -309,4 +312,21 @@ class WebsiteEditExit(APIView):
         WebsiteLock.release_lock(pk, user_id)  # idempotent
         Broadcast.lock_released(pk)
 
-        return Response({"status": "ok"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Editing session ended."}, status=status.HTTP_200_OK
+        )
+
+
+class SystemHealth(APIView):
+    """API endpoint that provides a health check for the system."""
+
+    def get(self, request):
+        """Return a simple health status response."""
+        
+        process = psutil.Process(os.getpid())
+
+        return Response({
+            "cpu_percent": psutil.cpu_percent(interval=1),
+            "memory_percent": psutil.virtual_memory().percent,
+            "process_memory_mb": process.memory_info().rss / 1024 / 1024,
+        })

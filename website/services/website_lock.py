@@ -3,8 +3,8 @@ from django.core.cache import cache
 
 class WebsiteLock:
     """Website lock mechanism for website editing, using Django's cache framework (e.g. Redis)."""
-    
-    lock_ttl_seconds = 300 # 5 minutes
+
+    lock_ttl_seconds = 300  # 5 minutes
 
     @classmethod
     def locked_by(cls, website_pk: int) -> int | None:

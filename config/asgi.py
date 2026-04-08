@@ -10,7 +10,7 @@ from django.urls import path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
-from website.consumers import WebsiteLockConsumer # noqa: E402 (must come after setup)
+from website.consumers import WebsiteLockConsumer  # noqa: E402 (must come after setup)
 
 websocket_urlpatterns = [
     path("ws/website/<int:website_pk>/", WebsiteLockConsumer.as_asgi()),
