@@ -1,29 +1,13 @@
-"""
-WebSocket consumer for real-time lock event broadcasting.
-
-Each client (viewer or editor) connects to:
-    ws://host/ws/website/<website_pk>/
-
-On connection the client is added to the channel group:
-    website_lock_{website_pk}
-
-The server broadcasts two event types over this group:
-    • lock_acquired  — another user has started editing; clients should disable edit mode
-    • lock_released  — the editor left; clients may now request the lock
-
-Clients never send messages to the server through this socket;
-all state mutations go through the HTTP endpoints.
-"""
-
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-
-def lock_group_name(website_pk: int | str) -> str:
-    return f"website_lock_{website_pk}"
+from website.utils.lock_group_name import lock_group_name
 
 
 class WebsiteLockConsumer(AsyncJsonWebsocketConsumer):
+    """WebSocket consumer to relay website lock events to clients in real-time."""
+
     async def connect(self):
+        """On WebSocket connection, add this channel to the lock group for the relevant website."""
         self.website_pk = self.scope["url_route"]["kwargs"]["website_pk"]
         self.group_name = lock_group_name(self.website_pk)
 
