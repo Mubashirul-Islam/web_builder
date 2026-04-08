@@ -344,6 +344,6 @@ class WebsiteEditExit(APIView):
         )  # TODO: replace with actual user ID from auth system
 
         release_lock(pk, user_id)  # idempotent
-        # broadcast_lock_released(pk) TODO: implement this to notify other users waiting on the lock
+        broadcast_lock_released(pk)
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
