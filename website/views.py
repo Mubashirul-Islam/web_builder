@@ -328,5 +328,6 @@ class SystemHealth(APIView):
         return Response({
             "cpu_percent": psutil.cpu_percent(interval=1),
             "memory_percent": psutil.virtual_memory().percent,
+            "process_cpu_percent": process.cpu_percent(interval=1),
             "process_memory_mb": process.memory_info().rss / 1024 / 1024,
         })
