@@ -20,12 +20,20 @@ from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 from website import views
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("website.urls")),
     path("silk/", include("silk.urls", namespace="silk")),
-    path("monitor/", views.ResourceMonitor.as_view(), name="monitor"),
+    path("monitor/", views.ResourceMonitor.as_view(), name="resource-monitor"),
+    path("auth/", include("auth.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/schema/swagger-ui/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
 ]
 
 if settings.DEBUG:

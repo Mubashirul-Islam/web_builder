@@ -18,11 +18,13 @@ from website.services.broadcasts import Broadcast
 from website.services.website_builder import WebsiteBuilder
 from website.services.asset_dimensions import AssetDimensions
 from website.services.website_lock import WebsiteLock
+from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
 
 
 class websiteList(generics.ListCreateAPIView):
     """API endpoint that allows websites to be viewed or created."""
 
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Website.objects.prefetch_related("pages")
     serializer_class = WebsiteSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -34,6 +36,7 @@ class websiteList(generics.ListCreateAPIView):
 class websiteDetail(generics.RetrieveUpdateDestroyAPIView):
     """API endpoint that allows a single website to be viewed, updated, or deleted."""
 
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
 
@@ -41,6 +44,7 @@ class websiteDetail(generics.RetrieveUpdateDestroyAPIView):
 class PageList(APIView):
     """API endpoint that allows pages to be viewed or created."""
 
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title"]
     ordering_fields = ["created_at", "modified_at"]
@@ -89,6 +93,8 @@ class PageList(APIView):
 class PageDetail(APIView):
     """API endpoint that allows a single page to be viewed, updated, or deleted."""
 
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     def get_object(self, pk):
         """Return a page by primary key or raise 404 if it does not exist."""
         return get_object_or_404(Page, pk=pk)
@@ -127,6 +133,8 @@ class PageDetail(APIView):
 class WebsiteBuild(APIView):
     """API endpoint that triggers the build process for a specific website."""
 
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         """Trigger the build process for the specified website."""
         website = get_object_or_404(Website, pk=pk)
@@ -160,6 +168,8 @@ class WebsiteBuild(APIView):
 
 class AssetUpload(APIView):
     """API endpoint that allows assets to be uploaded to a specific website."""
+
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
         """Handle file uploads for a specific website identified by primary key."""
@@ -201,12 +211,11 @@ class AssetUpload(APIView):
 class WebsiteEdit(APIView):
     """API endpoint that manages the edit lock for a specific website."""
 
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, pk):
         website = get_object_or_404(Website, pk=pk)
-        # user_id = request.user.id
-        user_id = request.query_params.get(
-            "user_id"
-        )  # TODO: replace with actual user ID from auth system
+        user_id = request.user.id
 
         acquired = WebsiteLock.acquire_lock(pk, user_id)
 
@@ -234,12 +243,11 @@ class WebsiteEdit(APIView):
 class WebsiteEditRefresh(APIView):
     """API endpoint that refreshes the edit lock for a specific website, extending the TTL."""
 
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         get_object_or_404(Website, pk=pk)
-        # user_id = request.user.id
-        user_id = request.query_params.get(
-            "user_id"
-        )  # TODO: replace with actual user ID from auth system
+        user_id = request.user.id
 
         refreshed = WebsiteLock.refresh_lock(pk, user_id)
 
@@ -259,12 +267,11 @@ class WebsiteEditRefresh(APIView):
 class WebsiteEditSave(APIView):
     """API endpoint that saves changes to a specific website and releases the edit lock."""
 
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         website = get_object_or_404(Website, pk=pk)
-        # user_id = request.user.id
-        user_id = request.query_params.get(
-            "user_id"
-        )  # TODO: replace with actual user ID from auth system
+        user_id = request.user.id
 
         lock_exists, is_same_user = WebsiteLock.check_lock_for_save(pk, user_id)
 
@@ -286,7 +293,6 @@ class WebsiteEditSave(APIView):
 
         # TODO: persist the changes to the database here
 
-        # Release lock then broadcast
         WebsiteLock.release_lock(pk, user_id)
         Broadcast.lock_released(pk)
 
@@ -302,12 +308,11 @@ class WebsiteEditSave(APIView):
 class WebsiteEditExit(APIView):
     """API endpoint that releases the edit lock for a specific website when the user exits the edit page without saving."""
 
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         get_object_or_404(Website, pk=pk)
-        # user_id = request.user.id
-        user_id = request.query_params.get(
-            "user_id"
-        )  # TODO: replace with actual user ID from auth system
+        user_id = request.user.id
 
         WebsiteLock.release_lock(pk, user_id)  # idempotent
         Broadcast.lock_released(pk)
@@ -320,6 +325,7 @@ class WebsiteEditExit(APIView):
 class ResourceMonitor(APIView):
     """API endpoint that provides real-time system resource usage metrics including CPU and memory usage for both the overall system and the current process."""
 
+    permission_classes = [AllowAny]
     def get(self, request):
         """Return current system resource usage metrics including CPU and memory usage for both the overall system and the current process."""
 
