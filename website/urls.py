@@ -31,8 +31,4 @@ urlpatterns = [
         views.WebsiteEditExit.as_view(),
         name="website-edit-exit",
     ),
-
-
-
-    path("system/health/", views.SystemHealth.as_view(), name="system-health"),
 ]

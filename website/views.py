@@ -23,7 +23,7 @@ from website.services.website_lock import WebsiteLock
 class websiteList(generics.ListCreateAPIView):
     """API endpoint that allows websites to be viewed or created."""
 
-    queryset = Website.objects.all()
+    queryset = Website.objects.prefetch_related("pages")
     serializer_class = WebsiteSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name"]
@@ -317,17 +317,19 @@ class WebsiteEditExit(APIView):
         )
 
 
-class SystemHealth(APIView):
-    """API endpoint that provides a health check for the system."""
+class ResourceMonitor(APIView):
+    """API endpoint that provides real-time system resource usage metrics including CPU and memory usage for both the overall system and the current process."""
 
     def get(self, request):
-        """Return a simple health status response."""
-        
+        """Return current system resource usage metrics including CPU and memory usage for both the overall system and the current process."""
+
         process = psutil.Process(os.getpid())
 
-        return Response({
-            "cpu_percent": psutil.cpu_percent(interval=1),
-            "memory_percent": psutil.virtual_memory().percent,
-            "process_cpu_percent": process.cpu_percent(interval=1),
-            "process_memory_mb": process.memory_info().rss / 1024 / 1024,
-        })
+        return Response(
+            {
+                "cpu_percent": psutil.cpu_percent(interval=1),
+                "memory_percent": psutil.virtual_memory().percent,
+                "process_cpu_percent": process.cpu_percent(interval=1),
+                "process_memory_mb": process.memory_info().rss / 1024 / 1024,
+            }
+        )

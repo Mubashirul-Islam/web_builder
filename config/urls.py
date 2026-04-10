@@ -19,10 +19,13 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+from website import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("website.urls")),
+    path("silk/", include("silk.urls", namespace="silk")),
+    path("monitor/", views.ResourceMonitor.as_view(), name="monitor"),
 ]
 
 if settings.DEBUG:
