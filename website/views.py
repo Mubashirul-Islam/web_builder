@@ -18,7 +18,11 @@ from website.services.broadcasts import Broadcast
 from website.services.website_builder import WebsiteBuilder
 from website.services.asset_dimensions import AssetDimensions
 from website.services.website_lock import WebsiteLock
-from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticatedOrReadOnly,
+    IsAuthenticated,
+)
 
 
 class websiteList(generics.ListCreateAPIView):
@@ -326,6 +330,7 @@ class ResourceMonitor(APIView):
     """API endpoint that provides real-time system resource usage metrics including CPU and memory usage for both the overall system and the current process."""
 
     permission_classes = [AllowAny]
+
     def get(self, request):
         """Return current system resource usage metrics including CPU and memory usage for both the overall system and the current process."""
 

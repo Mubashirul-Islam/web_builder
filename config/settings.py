@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "website",
+    "auth.apps.AuthConfig",
+    "frontend",
 ]
 
 MIDDLEWARE = [
