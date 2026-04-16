@@ -49,6 +49,9 @@ class AssetUploadTests(TempMediaRootMixin, APITestCase):
             **website_files("asset-site"),
         )
 
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
+
     def _upload_url(self, pk=None):
         return reverse("website-asset-upload", args=[pk or self.website.pk])
 

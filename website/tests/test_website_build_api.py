@@ -64,6 +64,9 @@ class WebsiteBuildTests(TempDirsMixin, APITestCase):
             content=upload_file("home.txt", "<main>Welcome</main>", "text/plain"),
         )
 
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
+
     def _build_url(self, pk=None, mode=None):
         url = reverse("website-build", args=[pk or self.website.pk])
         if mode is not None:

@@ -144,6 +144,9 @@ class PagePOSTTests(TempMediaRootMixin, APITestCase):
             **website_files("docs-site-post"),
         )
 
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
+
     def test_create_page_with_valid_data(self):
         """Test creating a page with valid data."""
         data = {
@@ -206,6 +209,9 @@ class PagePUTTests(TempMediaRootMixin, APITestCase):
                 "original-page.txt", "<main>Original content</main>", "text/plain"
             ),
         )
+
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
 
     def test_update_page_with_valid_data(self):
         """Test updating a page with valid data using PUT."""
@@ -289,6 +295,9 @@ class PagePATCHTests(TempMediaRootMixin, APITestCase):
             ),
         )
 
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
+
     def test_partial_update_page_title(self):
         """Test partially updating a page's title using PATCH."""
         data = {
@@ -335,6 +344,9 @@ class PageDELETETests(TempMediaRootMixin, APITestCase):
             url="https://docs.example.com",
             **website_files("docs-site-delete"),
         )
+
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
 
     def test_delete_page(self):
         """Test deleting a page."""

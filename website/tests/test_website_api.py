@@ -121,6 +121,9 @@ class WebsitePOSTTests(TempMediaRootMixin, APITestCase):
             password="test-password",
         )
 
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
+
     def test_create_website_with_valid_data(self):
         """Test creating a website with valid data."""
         data = {
@@ -207,6 +210,9 @@ class WebsitePUTTests(TempMediaRootMixin, APITestCase):
             **website_files("original-site"),
         )
 
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
+
     def test_update_website_with_valid_data(self):
         """Test updating a website with valid data using PUT."""
         data = {
@@ -275,6 +281,9 @@ class WebsitePATCHTests(TempMediaRootMixin, APITestCase):
             **website_files("partial-original-site"),
         )
 
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
+
     def test_partial_update_website_name(self):
         """Test partially updating a website's name using PATCH."""
         data = {
@@ -313,6 +322,9 @@ class WebsiteDELETETests(TempMediaRootMixin, APITestCase):
             email="tester@example.com",
             password="test-password",
         )
+
+    def setUp(self):
+        self.client.force_authenticate(user=self.user)
 
     def test_delete_website(self):
         """Test deleting a website."""
