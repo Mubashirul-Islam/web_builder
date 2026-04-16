@@ -17,6 +17,8 @@ class WebsiteBuilder:
         pages_dir = f"{output_dir}/pages"
         static_dir = f"{output_dir}/static"
         asset_dir = f"{output_dir}/asset"
+        css_url = default_storage.url(f"{static_dir}/style.css")
+        js_url = default_storage.url(f"{static_dir}/script.js")
 
         header_content, footer_content, js_content, css_content = cls._read_contents(
             website
@@ -29,6 +31,8 @@ class WebsiteBuilder:
                 header_content,
                 page_content,
                 footer_content,
+                css_url,
+                js_url,
             )
             cls._write_page(pages_dir, page.slug, html)
 
@@ -47,7 +51,12 @@ class WebsiteBuilder:
 
     @staticmethod
     def _render_page_html(
-        page: Page, header_content: str, page_content: str, footer_content: str
+        page: Page,
+        header_content: str,
+        page_content: str,
+        footer_content: str,
+        css_url: str,
+        js_url: str,
     ) -> str:
         """Render the full HTML for a page by combining its content with the website header and footer."""
 
@@ -62,8 +71,8 @@ class WebsiteBuilder:
 <meta property="og:type" content="{page.meta_og_type}">
 <meta property="og:image" content="{page.meta_og_image}">
 <title>{page.title}</title>
-<link rel="stylesheet" href="static/style.css">
-<script src="static/script.js" defer></script>
+<link rel="stylesheet" href="{css_url}">
+<script src="{js_url}" defer></script>
 </head>
 <body>
 {header_content}
@@ -79,9 +88,7 @@ class WebsiteBuilder:
         WebsiteBuilder._write_bytes(page_path, html.encode("utf-8"))
 
     @staticmethod
-    def _write_static_files(
-        static_dir: str, css_content: str, js_content: str
-    ) -> None:
+    def _write_static_files(static_dir: str, css_content: str, js_content: str) -> None:
         """Write website-level CSS and JavaScript assets."""
         css_path = f"{static_dir}/style.css"
         js_path = f"{static_dir}/script.js"

@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "website",
     "auth.apps.AuthConfig",
-    "frontend",
+    "render",
 ]
 
 MIDDLEWARE = [
@@ -176,5 +176,5 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-MEDIA_URL = "media/"
+MEDIA_URL = env("MEDIA_ROOT", default="/media/production/")
 MEDIA_ROOT = env("MEDIA_ROOT", default=str(BASE_DIR / "media" / "production"))
