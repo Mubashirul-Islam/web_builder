@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 
 from website.utils.read_file import read_file
 from website.models import Website, Page
@@ -12,16 +13,14 @@ class WebsiteBuilder:
     @classmethod
     def build_website(cls, website: Website, mode: str) -> None:
         """Generate HTML pages, static files, and copied assets."""
-        output_dir = Path(settings.MEDIA_ROOT) / website.name / mode
-        pages_dir = output_dir / "pages"
-        static_dir = output_dir / "static"
-        asset_dir = output_dir / "asset"
+        output_dir = f"{website.name}/{mode}"
+        pages_dir = f"{output_dir}/pages"
+        static_dir = f"{output_dir}/static"
+        asset_dir = f"{output_dir}/asset"
 
         header_content, footer_content, js_content, css_content = cls._read_contents(
             website
         )
-
-        cls._prepare_output_dirs(output_dir, pages_dir, static_dir, asset_dir)
 
         for page in website.pages.all():
             page_content = read_file(page.content)
@@ -35,19 +34,6 @@ class WebsiteBuilder:
 
         cls._write_static_files(static_dir, css_content, js_content)
         cls._write_asset_files(asset_dir, website)
-
-    @staticmethod
-    def _prepare_output_dirs(
-        output_dir: Path,
-        pages_dir: Path,
-        static_dir: Path,
-        asset_dir: Path,
-    ) -> None:
-        """Create the target directories used by the build output."""
-        output_dir.mkdir(parents=True, exist_ok=True)
-        pages_dir.mkdir(parents=True, exist_ok=True)
-        static_dir.mkdir(parents=True, exist_ok=True)
-        asset_dir.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def _read_contents(website: Website) -> tuple[str, str, str, str]:
@@ -87,30 +73,36 @@ class WebsiteBuilder:
 </html>"""
 
     @staticmethod
-    def _write_page(pages_dir: Path, slug: str, html: str) -> None:
+    def _write_page(pages_dir: str, slug: str, html: str) -> None:
         """Write a single rendered page into the pages directory."""
-        page_path = pages_dir / f"{slug}.html"
-        page_path.write_text(html, encoding="utf-8")
+        page_path = f"{pages_dir}/{slug}.html"
+        WebsiteBuilder._write_bytes(page_path, html.encode("utf-8"))
 
     @staticmethod
     def _write_static_files(
-        static_dir: Path, css_content: str, js_content: str
+        static_dir: str, css_content: str, js_content: str
     ) -> None:
         """Write website-level CSS and JavaScript assets."""
-        css_path = static_dir / "style.css"
-        js_path = static_dir / "script.js"
+        css_path = f"{static_dir}/style.css"
+        js_path = f"{static_dir}/script.js"
 
-        css_path.write_text(css_content, encoding="utf-8")
-        js_path.write_text(js_content, encoding="utf-8")
+        WebsiteBuilder._write_bytes(css_path, css_content.encode("utf-8"))
+        WebsiteBuilder._write_bytes(js_path, js_content.encode("utf-8"))
 
     @staticmethod
-    def _write_asset_files(asset_dir: Path, website: Website) -> None:
+    def _write_asset_files(asset_dir: str, website: Website) -> None:
         for asset in website.assets.all():
-            target_dir = asset_dir / asset.type
-            target_dir.mkdir(exist_ok=True)
-
             filename = Path(asset.file.name).name
-            target_path = target_dir / filename
+            target_path = f"{asset_dir}/{asset.type}/{filename}"
 
-            with asset.file.open("rb") as src, target_path.open("wb") as dst:
-                dst.write(src.read())
+            if default_storage.exists(target_path):
+                default_storage.delete(target_path)
+
+            default_storage.save(target_path, asset.file)
+
+    @staticmethod
+    def _write_bytes(path: str, content: bytes) -> None:
+        """Write bytes to storage, replacing any existing file at the same path."""
+        if default_storage.exists(path):
+            default_storage.delete(path)
+        default_storage.save(path, ContentFile(content))
