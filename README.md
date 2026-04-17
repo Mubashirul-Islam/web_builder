@@ -5,7 +5,8 @@ Web Builder is a Django + Django REST Framework backend for:
 - creating and managing websites and pages,
 - uploading website/page source files,
 - uploading media assets (images/videos),
-- building static output for preview and live modes.
+- building static output for preview and live modes,
+- rendering built pages from the `/render/` app.
 
 It also includes:
 
@@ -35,8 +36,9 @@ It also includes:
 config/              Django project settings and URL configuration
 auth/                JWT auth endpoint routing
 website/             Main app (models, serializers, views, tests, services)
+render/              Page rendering endpoint for built content
 media/production/    Default generated and uploaded files root
-docker-compose.yaml  Local PostgreSQL service
+docker-compose.yaml  Local PostgreSQL and Redis services
 requirements.txt     Python dependencies
 ```
 
@@ -44,6 +46,7 @@ requirements.txt     Python dependencies
 
 - API base: `/api/`
 - Auth base: `/auth/`
+- Render base: `/render/<website_name>/<page_slug>/`
 - WebSocket: `/ws/website/<website_pk>/`
 - OpenAPI schema: `/api/schema/`
 - Swagger UI: `/api/schema/swagger-ui/`
@@ -111,6 +114,7 @@ ALLOWED_HOSTS=127.0.0.1,localhost
 
 DATABASE_URL=postgres://myuser:mypassword@127.0.0.1:5432/mydatabase
 REDIS_URL=redis://127.0.0.1:6379/
+REDIS_PORT=6379
 
 POSTGRES_DB=mydatabase
 POSTGRES_USER=myuser
@@ -145,7 +149,7 @@ pip install -r requirements.txt
 
 3. Ensure .env exists in project root.
 
-4. Start PostgreSQL.
+4. Start PostgreSQL and Redis.
 
 ```bash
 docker compose -p dev up -d
@@ -163,13 +167,7 @@ python manage.py migrate
 python manage.py seed_db
 ```
 
-7. Start Redis (required for edit-lock and WebSocket features).
-
-```bash
-redis-server
-```
-
-8. Start the API server.
+7. Start the API server.
 
 ```bash
 python manage.py runserver
@@ -214,6 +212,7 @@ Permission summary:
 - Public read access: website/page list and detail (`GET`)
 - Auth required: create/update/delete websites/pages
 - Auth required: build/upload/edit-lock routes
+- Public access: render endpoint and diagnostics/docs routes
 
 ## API Endpoints
 
@@ -267,6 +266,10 @@ List query parameters:
 - GET /api/schema/swagger-ui/
 - GET /silk/
 
+### Render
+
+- GET /render/<website_name>/<page_slug>/
+
 ### WebSocket
 
 - WS /ws/website/<website_pk>/
@@ -282,6 +285,7 @@ List query parameters:
 - Asset upload supports only image/* and video/* content types.
 - Edit-lock HTTP endpoints infer user from authenticated request (`request.user.id`).
 - Lock TTL is 5 minutes and can be refreshed with the refresh endpoint.
+- WebSocket lock events are emitted as `lock_acquired` and `lock_released`.
 
 ## Build Output
 

@@ -25,7 +25,13 @@ class WebsiteBuilder:
         )
 
         for page in website.pages.all():
-            page_content = read_file(page.content)
+            try:
+                page_content = read_file(page.content)
+            except FileNotFoundError as exc:
+                raise RuntimeError(
+                    f"Failed to read content for page '{page.slug}'."
+                ) from exc
+
             html = cls._render_page_html(
                 page,
                 header_content,
@@ -102,14 +108,22 @@ class WebsiteBuilder:
             filename = Path(asset.file.name).name
             target_path = f"{asset_dir}/{asset.type}/{filename}"
 
-            if default_storage.exists(target_path):
-                default_storage.delete(target_path)
+            try:
+                if default_storage.exists(target_path):
+                    default_storage.delete(target_path)
 
-            default_storage.save(target_path, asset.file)
+                default_storage.save(target_path, asset.file)
+            except Exception as exc:
+                raise OSError(
+                    f"Could not write asset '{filename}' to '{target_path}'."
+                ) from exc
 
     @staticmethod
     def _write_bytes(path: str, content: bytes) -> None:
         """Write bytes to storage, replacing any existing file at the same path."""
-        if default_storage.exists(path):
-            default_storage.delete(path)
-        default_storage.save(path, ContentFile(content))
+        try:
+            if default_storage.exists(path):
+                default_storage.delete(path)
+            default_storage.save(path, ContentFile(content))
+        except Exception as exc:
+            raise OSError(f"Could not write file '{path}'.") from exc
