@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from django.core.files.base import ContentFile
@@ -12,7 +13,7 @@ class WebsiteBuilder:
 
     @classmethod
     def build_website(cls, website: Website, mode: str) -> None:
-        """Generate HTML pages, static files, and copied assets."""
+        """Generate JSON page payloads, static files, and copied assets."""
         output_dir = f"{website.name}/{mode}"
         pages_dir = f"{output_dir}/pages"
         static_dir = f"{output_dir}/static"
@@ -23,6 +24,7 @@ class WebsiteBuilder:
         header_content, footer_content, js_content, css_content = cls._read_contents(
             website
         )
+        cls._write_shared_layout_files(output_dir, header_content, footer_content)
 
         for page in website.pages.all():
             try:
@@ -32,15 +34,13 @@ class WebsiteBuilder:
                     f"Failed to read content for page '{page.slug}'."
                 ) from exc
 
-            html = cls._render_page_html(
+            payload_json = cls._render_page_json(
                 page,
-                header_content,
                 page_content,
-                footer_content,
                 css_url,
                 js_url,
             )
-            cls._write_page(pages_dir, page.slug, html)
+            cls._write_page(pages_dir, page.slug, payload_json)
 
         cls._write_static_files(static_dir, css_content, js_content)
         cls._write_asset_files(asset_dir, website)
@@ -56,42 +56,44 @@ class WebsiteBuilder:
         )
 
     @staticmethod
-    def _render_page_html(
+    def _render_page_json(
         page: Page,
-        header_content: str,
         page_content: str,
-        footer_content: str,
         css_url: str,
         js_url: str,
     ) -> str:
-        """Render the full HTML for a page by combining its content with the website header and footer."""
+        """Serialize page metadata and content into the expected JSON payload."""
 
-        return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="{page.meta_description}">
-<meta property="og:title" content="{page.title}">
-<meta property="og:description" content="{page.meta_description}">
-<meta property="og:type" content="{page.meta_og_type}">
-<meta property="og:image" content="{page.meta_og_image}">
-<title>{page.title}</title>
-<link rel="stylesheet" href="{css_url}">
-<script src="{js_url}" defer></script>
-</head>
-<body>
-{header_content}
-{page_content}
-{footer_content}
-</body>
-</html>"""
+        payload = {
+            "meta_description": page.meta_description,
+            "title": page.title,
+            "meta_og_type": page.meta_og_type,
+            "meta_og_image": page.meta_og_image,
+            "css_url": css_url,
+            "js_url": js_url,
+            "content": page_content,
+        }
+        return json.dumps(payload, ensure_ascii=False)
 
     @staticmethod
-    def _write_page(pages_dir: str, slug: str, html: str) -> None:
-        """Write a single rendered page into the pages directory."""
-        page_path = f"{pages_dir}/{slug}.html"
-        WebsiteBuilder._write_bytes(page_path, html.encode("utf-8"))
+    def _write_shared_layout_files(
+        output_dir: str, header_content: str, footer_content: str
+    ) -> None:
+        """Write shared header and footer JSON files once per website build."""
+        header_path = f"{output_dir}/header.json"
+        footer_path = f"{output_dir}/footer.json"
+
+        header_payload = json.dumps({"header": header_content}, ensure_ascii=False)
+        footer_payload = json.dumps({"footer": footer_content}, ensure_ascii=False)
+
+        WebsiteBuilder._write_bytes(header_path, header_payload.encode("utf-8"))
+        WebsiteBuilder._write_bytes(footer_path, footer_payload.encode("utf-8"))
+
+    @staticmethod
+    def _write_page(pages_dir: str, slug: str, payload_json: str) -> None:
+        """Write a single page JSON payload into the pages directory."""
+        page_path = f"{pages_dir}/{slug}.json"
+        WebsiteBuilder._write_bytes(page_path, payload_json.encode("utf-8"))
 
     @staticmethod
     def _write_static_files(static_dir: str, css_content: str, js_content: str) -> None:
