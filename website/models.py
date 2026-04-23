@@ -88,6 +88,11 @@ class Page(models.Model):
         validators=[FileExtensionValidator(allowed_extensions=["txt"])],
         help_text="The content file for the page.",
     )
+    dynamic_endpoint = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Optional API endpoint to fetch dynamic data for the page.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True, db_index=True)
 

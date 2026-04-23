@@ -72,6 +72,7 @@ class WebsiteBuilder:
             "css_url": css_url,
             "js_url": js_url,
             "content": page_content,
+            "dynamic_endpoint": page.dynamic_endpoint or "",
         }
         return json.dumps(payload, ensure_ascii=False)
 

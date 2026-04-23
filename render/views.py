@@ -4,6 +4,8 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.core.files.storage import default_storage
 
+from render.services.dynamic_data import DynamicDataService
+
 
 def render_page(
     request: HttpRequest, website_name: str, page_slug: str
@@ -29,6 +31,14 @@ def render_page(
     except json.JSONDecodeError:
         return HttpResponse("Invalid page data", status=500)
 
+    dynamic_data = DynamicDataService.fetch_dynamic_data(
+        page_payload.get("dynamic_endpoint", "")
+    )
+
+    rendered_content = DynamicDataService.render_content_template(
+        page_payload.get("content", ""), dynamic_data
+    )
+
     context = {
         "meta_description": page_payload.get("meta_description", ""),
         "title": page_payload.get("title", ""),
@@ -37,7 +47,7 @@ def render_page(
         "css_url": page_payload.get("css_url", ""),
         "js_url": page_payload.get("js_url", ""),
         "header_content": header_payload.get("header", ""),
-        "page_content": page_payload.get("content", ""),
+        "page_content": rendered_content,
         "footer_content": footer_payload.get("footer", ""),
     }
 
