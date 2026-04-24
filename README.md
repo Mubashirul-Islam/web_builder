@@ -13,7 +13,7 @@ It also includes:
 - JWT authentication for protected API routes,
 - real-time edit-lock events over WebSocket,
 - OpenAPI schema + Swagger UI,
-- dynamic server-side page content rendering from per-page API endpoints,
+- dynamic server-side page content rendering using per-page data resolved at build time,
 - optional request profiling via Silk.
 
 ## Stack
@@ -77,6 +77,7 @@ requirements.txt     Python dependencies
 - meta_og_type
 - meta_og_image
 - content (.txt file)
+- dynamic_endpoint (optional API endpoint used at build time)
 - created_at, modified_at
 
 ### Asset
@@ -275,7 +276,7 @@ Render behavior:
 
 - Reads build payloads from `<website_name>/live/pages/<page_slug>.json`.
 - Merges shared layout payloads from `<website_name>/live/header.json` and `<website_name>/live/footer.json`.
-- If `dynamic_endpoint` is set for the page, fetches JSON data and renders page content as a Django template with `dynamic_data` context.
+- Uses `dynamic_data` embedded in the page payload and renders page content as a Django template with `dynamic_data` context.
 
 ### WebSocket
 
@@ -294,7 +295,7 @@ Render behavior:
 - Lock TTL is 5 minutes and can be refreshed with the refresh endpoint.
 - WebSocket lock events are emitted as `lock_acquired` and `lock_released`.
 - Render endpoint serves from the `live` build output.
-- Page content can use template expressions like `{{ dynamic_data.some_key }}` when `dynamic_endpoint` is configured.
+- Page content can use template expressions like `{{ dynamic_data.some_key }}` when dynamic data exists in the built page payload.
 
 ## Build Output
 
@@ -318,7 +319,7 @@ Per-page JSON payload includes:
 - title and metadata (`meta_description`, `meta_og_type`, `meta_og_image`)
 - `css_url` and `js_url`
 - `content`
-- `dynamic_endpoint`
+- `dynamic_data`
 
 ## Management Commands
 
