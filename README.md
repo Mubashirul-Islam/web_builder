@@ -5,7 +5,7 @@ Web Builder is a Django + Django REST Framework backend for:
 - creating and managing websites and pages,
 - uploading website/page source files,
 - uploading media assets (images/videos),
-- building static output for preview and live modes,
+- building JSON-based output for preview and live modes,
 - rendering built pages from the `/render/` app.
 
 It also includes:
@@ -13,6 +13,7 @@ It also includes:
 - JWT authentication for protected API routes,
 - real-time edit-lock events over WebSocket,
 - OpenAPI schema + Swagger UI,
+- dynamic server-side page content rendering from per-page API endpoints,
 - optional request profiling via Silk.
 
 ## Stack
@@ -270,6 +271,12 @@ List query parameters:
 
 - GET /render/<website_name>/<page_slug>/
 
+Render behavior:
+
+- Reads build payloads from `<website_name>/live/pages/<page_slug>.json`.
+- Merges shared layout payloads from `<website_name>/live/header.json` and `<website_name>/live/footer.json`.
+- If `dynamic_endpoint` is set for the page, fetches JSON data and renders page content as a Django template with `dynamic_data` context.
+
 ### WebSocket
 
 - WS /ws/website/<website_pk>/
@@ -286,6 +293,8 @@ List query parameters:
 - Edit-lock HTTP endpoints infer user from authenticated request (`request.user.id`).
 - Lock TTL is 5 minutes and can be refreshed with the refresh endpoint.
 - WebSocket lock events are emitted as `lock_acquired` and `lock_released`.
+- Render endpoint serves from the `live` build output.
+- Page content can use template expressions like `{{ dynamic_data.some_key }}` when `dynamic_endpoint` is configured.
 
 ## Build Output
 
@@ -296,11 +305,20 @@ Build artifacts are generated under:
 
 Each build writes:
 
-- pages/<page_slug>.html
+- pages/<page_slug>.json
+- header.json
+- footer.json
 - static/style.css
 - static/script.js
 - asset/images/<filename>
 - asset/videos/<filename>
+
+Per-page JSON payload includes:
+
+- title and metadata (`meta_description`, `meta_og_type`, `meta_og_image`)
+- `css_url` and `js_url`
+- `content`
+- `dynamic_endpoint`
 
 ## Management Commands
 
