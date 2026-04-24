@@ -31,9 +31,7 @@ def render_page(
     except json.JSONDecodeError:
         return HttpResponse("Invalid page data", status=500)
 
-    dynamic_data = DynamicDataService.fetch_dynamic_data(
-        page_payload.get("dynamic_endpoint", "")
-    )
+    dynamic_data = page_payload.get("dynamic_data", {})
 
     rendered_content = DynamicDataService.render_content_template(
         page_payload.get("content", ""), dynamic_data

@@ -4,6 +4,7 @@ from pathlib import Path
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
+from render.services.dynamic_data import DynamicDataService
 from website.utils.read_file import read_file
 from website.models import Website, Page
 
@@ -33,12 +34,16 @@ class WebsiteBuilder:
                 raise RuntimeError(
                     f"Failed to read content for page '{page.slug}'."
                 ) from exc
+            dynamic_data = DynamicDataService.fetch_dynamic_data(
+                page.dynamic_endpoint or ""
+            )
 
             payload_json = cls._render_page_json(
                 page,
                 page_content,
                 css_url,
                 js_url,
+                dynamic_data,
             )
             cls._write_page(pages_dir, page.slug, payload_json)
 
@@ -61,6 +66,7 @@ class WebsiteBuilder:
         page_content: str,
         css_url: str,
         js_url: str,
+        dynamic_data: dict,
     ) -> str:
         """Serialize page metadata and content into the expected JSON payload."""
 
@@ -72,7 +78,7 @@ class WebsiteBuilder:
             "css_url": css_url,
             "js_url": js_url,
             "content": page_content,
-            "dynamic_endpoint": page.dynamic_endpoint or "",
+            "dynamic_data": dynamic_data,
         }
         return json.dumps(payload, ensure_ascii=False)
 
