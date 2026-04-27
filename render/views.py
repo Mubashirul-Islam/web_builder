@@ -28,10 +28,6 @@ def render_page(
 
     dynamic_data = page_payload.get("dynamic_data", {})
 
-    rendered_content = DynamicDataService.render_content_template(
-        page_payload.get("content", ""), dynamic_data
-    )
-
     context = {
         "meta_description": page_payload.get("meta_description", ""),
         "title": page_payload.get("title", ""),
@@ -40,8 +36,9 @@ def render_page(
         "css_url": page_payload.get("css_url", ""),
         "js_url": page_payload.get("js_url", ""),
         "header_content": header_payload.get("header", ""),
-        "page_content": rendered_content,
+        "page_content": page_payload.get("content", ""),
         "footer_content": footer_payload.get("footer", ""),
+        "dynamic_data": dynamic_data,
     }
 
-    return render(request, "index.html", context)
+    return render(request, "dynamic_content.html", context)

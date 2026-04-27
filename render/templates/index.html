@@ -14,7 +14,9 @@
 </head>
 <body>
 {{ header_content|safe }}
+{% block dynamic_content %}
 {{ page_content|safe }}
+{% endblock dynamic_content %}
 {{ footer_content|safe }}
 </body>
 </html>
