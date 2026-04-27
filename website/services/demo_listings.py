@@ -11,10 +11,9 @@ def demo_listings():
         "reviews": 2,
         "is_new": False,
         "features": ["Air Conditioner", "Parking", "Pool"],
-        "image": "/media/listings/koh-chang.jpg",
+        "image": "https://imgservice.smartours.com/600x600/5-star-villa-minutes-from-ai-do-sos%c3%baa-bc-8326287-0.jpg",
         "provider": "booking",
         "provider_label": "Booking.com",
-        "cta": "Check Dates"
         },
         {
         "id": 2,
@@ -27,10 +26,9 @@ def demo_listings():
         "reviews": 61,
         "is_new": False,
         "features": ["Air Conditioner", "Parking", "Pool"],
-        "image": "/media/listings/chuz-villa.jpg",
+        "image": "https://imgservice.smartours.com/600x600/addys-villas-us-nokomis-ep-1802506-0.jpg",
         "provider": "expedia",
         "provider_label": "Expedia",
-        "cta": "Check Dates"
         },
         {
         "id": 3,
@@ -43,10 +41,9 @@ def demo_listings():
         "reviews": 0,
         "is_new": True,
         "features": ["Air Conditioner", "Parking", "Pool"],
-        "image": "/media/listings/naithon.jpg",
+        "image": "https://imgservice.smartours.com/600x600/adriana-luxury-villas-gr-adamantas-bc-11661710-0.jpg",
         "provider": "booking",
         "provider_label": "Booking.com",
-        "cta": "Check Dates"
         },
         {
         "id": 4,
@@ -59,10 +56,9 @@ def demo_listings():
         "reviews": 38,
         "is_new": False,
         "features": ["Air Conditioner", "Parking", "Pet Friendly"],
-        "image": "/media/listings/alanta.jpg",
+        "image": "https://imgservice.smartours.com/600x600/aethra-vegan-caves-gr-pyrgos-bc-11698447-0.jpg",
         "provider": "expedia",
         "provider_label": "Expedia",
-        "cta": "Check Dates"
         },
         {
         "id": 5,
@@ -75,10 +71,9 @@ def demo_listings():
         "reviews": 24,
         "is_new": False,
         "features": ["Air Conditioner", "Parking", "Pool"],
-        "image": "/media/listings/natara.jpg",
+        "image": "https://imgservice.smartours.com/600x600/alanta-villa-th-ko-lanta-ep-9098424-0.jpg",
         "provider": "booking",
         "provider_label": "Booking.com",
-        "cta": "Check Dates"
         },
         {
         "id": 6,
@@ -91,10 +86,9 @@ def demo_listings():
         "reviews": 2,
         "is_new": False,
         "features": ["Air Conditioner", "Parking", "Storage"],
-        "image": "/media/listings/phangan.jpg",
+        "image": "https://imgservice.smartours.com/600x600/almost-heaven-mountain-cabi-us-murphy-bc-9179596-0.jpg",
         "provider": "booking",
         "provider_label": "Booking.com",
-        "cta": "Check Dates"
         },
         {
         "id": 7,
@@ -107,10 +101,9 @@ def demo_listings():
         "reviews": 8,
         "is_new": False,
         "features": ["Air Conditioner", "Parking", "Pool"],
-        "image": "/media/listings/charm.jpg",
+        "image": "https://imgservice.smartours.com/600x600/antico-borgo-it-san-mauro-castelverde-bc-8514085-0.jpg",
         "provider": "booking",
         "provider_label": "Booking.com",
-        "cta": "Check Dates"
         },
         {
         "id": 8,
@@ -123,9 +116,8 @@ def demo_listings():
         "reviews": 0,
         "is_new": True,
         "features": ["Air Conditioner", "Parking", "Pool"],
-        "image": "/media/listings/tortugas.jpg",
+        "image": "https://imgservice.smartours.com/600x600/apartam-do-santiago-de-los-caballeros-bc-6972616-0.jpg",
         "provider": "booking",
         "provider_label": "Booking.com",
-        "cta": "Check Dates"
         }
   ]
