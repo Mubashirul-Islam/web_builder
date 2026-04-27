@@ -1,12 +1,10 @@
-from django.db.models.fields.files import FieldFile
+from django.core.files.storage import default_storage
 
-
-def read_file(field: FieldFile) -> str:
-    """Read text content from a model FileField."""
+def read_file(path: str) -> str:
     try:
-        with field.open("r") as f:
-            content = f.read()
-
-        return content if isinstance(content, str) else content.decode("utf-8")
+        with default_storage.open(path, "r") as f:
+            return f.read()
     except FileNotFoundError as exc:
-        raise FileNotFoundError(f"File '{field.name}' was not found.") from exc
+        raise FileNotFoundError(f"File '{path}' not found.") from exc
+    except Exception as exc:
+        raise OSError(f"Could not read file '{path}'.") from exc

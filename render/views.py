@@ -2,9 +2,9 @@ import json
 
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
-from django.core.files.storage import default_storage
 
 from render.services.dynamic_data import DynamicDataService
+from website.utils.read_file import read_file
 
 
 def render_page(
@@ -18,14 +18,9 @@ def render_page(
     footer_path = f"{output_dir}/footer.json"
 
     try:
-        with default_storage.open(page_path, "r") as f:
-            page_payload = json.load(f)
-
-        with default_storage.open(header_path, "r") as f:
-            header_payload = json.load(f)
-
-        with default_storage.open(footer_path, "r") as f:
-            footer_payload = json.load(f)
+        page_payload = json.loads(read_file(page_path))
+        header_payload = json.loads(read_file(header_path))
+        footer_payload = json.loads(read_file(footer_path))
     except FileNotFoundError:
         return HttpResponse("Page not found", status=404)
     except json.JSONDecodeError:

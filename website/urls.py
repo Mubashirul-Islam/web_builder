@@ -31,4 +31,9 @@ urlpatterns = [
         views.WebsiteEditExit.as_view(),
         name="website-edit-exit",
     ),
+    path(
+        "listings/",
+        views.DemoListings.as_view(),
+        name="demo-listings",
+    )
 ]

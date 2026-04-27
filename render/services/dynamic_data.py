@@ -5,8 +5,8 @@ from django.template import Context, Template
 class DynamicDataService:
     """Service for fetching dynamic data and rendering content templates."""
 
-    @classmethod
-    def fetch_dynamic_data(cls, endpoint: str) -> dict:
+    @staticmethod
+    def fetch_dynamic_data(endpoint: str) -> dict:
         """Call the outside API and return parsed JSON, or empty dict on failure."""
         if not endpoint:
             return {}
@@ -17,8 +17,8 @@ class DynamicDataService:
         except Exception:
             return {}
 
-    @classmethod
-    def render_content_template(cls, page_content: str, dynamic_data: dict) -> str:
+    @staticmethod
+    def render_content_template(page_content: str, dynamic_data: dict) -> str:
         """Render page content as a Django template so it can reference dynamic_data."""
         try:
             content_template = Template(page_content)

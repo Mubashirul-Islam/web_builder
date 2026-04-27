@@ -1,12 +1,13 @@
 import json
 from pathlib import Path
 
+from django.db.models.fields.files import FieldFile
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
 from render.services.dynamic_data import DynamicDataService
-from website.utils.read_file import read_file
 from website.models import Website, Page
+from website.utils.write_file import write_file
 
 
 class WebsiteBuilder:
@@ -29,7 +30,7 @@ class WebsiteBuilder:
 
         for page in website.pages.all():
             try:
-                page_content = read_file(page.content)
+                page_content = cls._read_file_field(page.content)
             except FileNotFoundError as exc:
                 raise RuntimeError(
                     f"Failed to read content for page '{page.slug}'."
@@ -50,14 +51,14 @@ class WebsiteBuilder:
         cls._write_static_files(static_dir, css_content, js_content)
         cls._write_asset_files(asset_dir, website)
 
-    @staticmethod
-    def _read_contents(website: Website) -> tuple[str, str, str, str]:
+    @classmethod
+    def _read_contents(cls, website: Website) -> tuple[str, str, str, str]:
         """Read the content of the website's header, footer, JavaScript, and CSS files."""
         return (
-            read_file(website.header),
-            read_file(website.footer),
-            read_file(website.js),
-            read_file(website.css),
+            cls._read_file_field(website.header),
+            cls._read_file_field(website.footer),
+            cls._read_file_field(website.js),
+            cls._read_file_field(website.css),
         )
 
     @staticmethod
@@ -93,14 +94,14 @@ class WebsiteBuilder:
         header_payload = json.dumps({"header": header_content}, ensure_ascii=False)
         footer_payload = json.dumps({"footer": footer_content}, ensure_ascii=False)
 
-        WebsiteBuilder._write_bytes(header_path, header_payload.encode("utf-8"))
-        WebsiteBuilder._write_bytes(footer_path, footer_payload.encode("utf-8"))
+        write_file(header_path, ContentFile(header_payload.encode("utf-8")))
+        write_file(footer_path, ContentFile(footer_payload.encode("utf-8")))
 
     @staticmethod
     def _write_page(pages_dir: str, slug: str, payload_json: str) -> None:
         """Write a single page JSON payload into the pages directory."""
         page_path = f"{pages_dir}/{slug}.json"
-        WebsiteBuilder._write_bytes(page_path, payload_json.encode("utf-8"))
+        write_file(page_path, ContentFile(payload_json.encode("utf-8")))
 
     @staticmethod
     def _write_static_files(static_dir: str, css_content: str, js_content: str) -> None:
@@ -108,31 +109,22 @@ class WebsiteBuilder:
         css_path = f"{static_dir}/style.css"
         js_path = f"{static_dir}/script.js"
 
-        WebsiteBuilder._write_bytes(css_path, css_content.encode("utf-8"))
-        WebsiteBuilder._write_bytes(js_path, js_content.encode("utf-8"))
+        write_file(css_path, ContentFile(css_content.encode("utf-8")))
+        write_file(js_path, ContentFile(js_content.encode("utf-8")))
 
     @staticmethod
     def _write_asset_files(asset_dir: str, website: Website) -> None:
         for asset in website.assets.all():
             filename = Path(asset.file.name).name
             target_path = f"{asset_dir}/{asset.type}/{filename}"
-
-            try:
-                if default_storage.exists(target_path):
-                    default_storage.delete(target_path)
-
-                default_storage.save(target_path, asset.file)
-            except Exception as exc:
-                raise OSError(
-                    f"Could not write asset '{filename}' to '{target_path}'."
-                ) from exc
+            write_file(target_path, asset.file)
 
     @staticmethod
-    def _write_bytes(path: str, content: bytes) -> None:
-        """Write bytes to storage, replacing any existing file at the same path."""
+    def _read_file_field(field: FieldFile) -> str:
+        """Read text content from a model FileField."""
         try:
-            if default_storage.exists(path):
-                default_storage.delete(path)
-            default_storage.save(path, ContentFile(content))
-        except Exception as exc:
-            raise OSError(f"Could not write file '{path}'.") from exc
+            with field.open("r") as f:
+                content = f.read()
+            return content if isinstance(content, str) else content.decode("utf-8")
+        except FileNotFoundError as exc:
+            raise FileNotFoundError(f"File '{field.name}' was not found.") from exc

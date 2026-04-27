@@ -15,6 +15,7 @@ from website.serializers import (
 from website.models import Asset, Page, Website
 from website.services.asset_compression import AssetCompression
 from website.services.broadcasts import Broadcast
+from website.services.demo_listings import demo_listings
 from website.services.website_builder import WebsiteBuilder
 from website.services.asset_dimensions import AssetDimensions
 from website.services.website_lock import WebsiteLock
@@ -342,5 +343,18 @@ class ResourceMonitor(APIView):
                 "memory_percent": psutil.virtual_memory().percent,
                 "process_cpu_percent": process.cpu_percent(interval=1),
                 "process_memory_mb": process.memory_info().rss / 1024 / 1024,
-            }
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+class DemoListings(APIView):
+    """API endpoint that provides a list of demo properties."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        '''Return a list of demo property listings with details such as title, location, price, rating, and features.'''
+        return Response(
+            demo_listings(),
+            status=status.HTTP_200_OK,
         )
