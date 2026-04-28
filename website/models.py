@@ -164,3 +164,59 @@ class Asset(models.Model):
     def __str__(self) -> str:
         """Return a readable label with type and file name."""
         return f"{self.type} - {self.file.name}"
+
+
+class PropertyList(models.Model):
+    """Model representing a list of properties for a website."""
+
+    website = models.ForeignKey(
+        Website,
+        on_delete=models.CASCADE,
+        related_name="property_lists",
+        help_text="The website to which this property list belongs.",
+    )
+
+    section_id = models.CharField(
+        max_length=100,
+        help_text="The section ID this property list is associated with.",
+    )
+    total_items = models.IntegerField(
+        help_text="The total number of properties in this list."
+    )
+    orientation = models.CharField(
+        max_length=10,
+        choices=[("grid", "Grid"), ("list", "List")],
+        help_text="The orientation of the property list.",
+    )
+    items_per_row = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of items per row (applicable if orientation is 'row').",
+    )
+    item_list = models.JSONField(
+        help_text="A JSON array containing the list of properties. Each property should include details such as title, location, price, etc."
+    )
+    provider = models.CharField(
+        max_length=50,
+        help_text="The data provider for the property list (e.g., 'booking', 'airbnb').",
+    )
+    type = models.CharField(
+        max_length=50,
+        help_text="The type of properties in the list (e.g., 'hotel', 'apartment').",
+    )
+    location = models.CharField(
+        max_length=255,
+        help_text="The location associated with the property list (e.g., 'New York City').",
+    )
+    source_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Optional URL to the source of the property data.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    def __str__(self) -> str:
+        """Return a label indicating the property list and associated website."""
+        return f"Property List for {self.website.name}"

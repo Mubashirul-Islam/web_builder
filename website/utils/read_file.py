@@ -1,5 +1,6 @@
 from django.core.files.storage import default_storage
 
+
 def read_file(path: str) -> str:
     try:
         with default_storage.open(path, "r") as f:

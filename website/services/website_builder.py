@@ -35,16 +35,14 @@ class WebsiteBuilder:
                 raise RuntimeError(
                     f"Failed to read content for page '{page.slug}'."
                 ) from exc
-            dynamic_data = DynamicDataService.fetch_dynamic_data(
-                page.dynamic_endpoint or ""
-            )
+            property_list = DynamicDataService.fetch_property_list(website)
 
             payload_json = cls._render_page_json(
                 page,
                 page_content,
                 css_url,
                 js_url,
-                dynamic_data,
+                property_list,
             )
             cls._write_page(pages_dir, page.slug, payload_json)
 
@@ -67,7 +65,7 @@ class WebsiteBuilder:
         page_content: str,
         css_url: str,
         js_url: str,
-        dynamic_data: dict,
+        property_list: dict,
     ) -> str:
         """Serialize page metadata and content into the expected JSON payload."""
 
@@ -79,7 +77,7 @@ class WebsiteBuilder:
             "css_url": css_url,
             "js_url": js_url,
             "content": page_content,
-            "dynamic_data": dynamic_data,
+            "property_list": property_list,
         }
         return json.dumps(payload, ensure_ascii=False)
 

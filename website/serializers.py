@@ -1,6 +1,6 @@
 from django.core.files.uploadedfile import UploadedFile
 from rest_framework import serializers
-from website.models import Asset, Page, Website
+from website.models import Asset, Page, PropertyList, Website
 
 
 class PageSerializer(serializers.ModelSerializer):
@@ -70,3 +70,11 @@ class AssetSerializer(serializers.Serializer):
             validated.append((f, file_type, alt_text))
 
         return validated
+
+
+class PropertyListSerializer(serializers.ModelSerializer):
+    """Serializer for the PropertyList model."""
+
+    class Meta:
+        model = PropertyList
+        fields = "__all__"

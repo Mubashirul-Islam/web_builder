@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Asset, Website, Page
+from .models import Asset, PropertyList, Website, Page
 
 
 @admin.register(Website)
@@ -28,4 +28,13 @@ class AssetAdmin(admin.ModelAdmin):
 
     list_display = ("file", "alt_text", "type", "website", "size", "modified_at")
     search_fields = ("file", "alt_text")
+    list_filter = ("type", "modified_at")
+
+
+@admin.register(PropertyList)
+class PropertyListAdmin(admin.ModelAdmin):
+    """Admin class for the PropertyList model."""
+
+    list_display = ("website", "type", "location", "modified_at")
+    search_fields = ("type", "location")
     list_filter = ("type", "modified_at")

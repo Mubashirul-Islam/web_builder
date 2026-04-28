@@ -9,10 +9,11 @@ from rest_framework.views import APIView
 from website.serializers import (
     AssetSerializer,
     PageSerializer,
+    PropertyListSerializer,
     WebsiteBuildSerializer,
     WebsiteSerializer,
 )
-from website.models import Asset, Page, Website
+from website.models import Asset, Page, PropertyList, Website
 from website.services.asset_compression import AssetCompression
 from website.services.broadcasts import Broadcast
 from website.services.demo_listings import demo_listings
@@ -346,15 +347,25 @@ class ResourceMonitor(APIView):
             },
             status=status.HTTP_200_OK,
         )
-    
+
+
 class DemoListings(APIView):
     """API endpoint that provides a list of demo properties."""
 
     permission_classes = [AllowAny]
 
     def get(self, request):
-        '''Return a list of demo property listings with details such as title, location, price, rating, and features.'''
+        """Return a list of demo property listings with details such as title, location, price, rating, and features."""
         return Response(
             demo_listings(),
             status=status.HTTP_200_OK,
         )
+
+
+class PropertyListView(generics.RetrieveAPIView):
+    """API endpoint that provides a list of demo properties."""
+
+    lookup_field = "website"
+    permission_classes = [AllowAny]
+    serializer_class = PropertyListSerializer
+    queryset = PropertyList.objects.all()

@@ -1,27 +1,23 @@
-import requests
-from django.template import Context, Template
+from website.models import Website
 
 
 class DynamicDataService:
-    """Service for fetching dynamic data and rendering content templates."""
+    """Service to fetch dynamic data for a website and render it into templates."""
 
     @staticmethod
-    def fetch_dynamic_data(endpoint: str) -> dict:
-        """Call the outside API and return parsed JSON, or empty dict on failure."""
-        if not endpoint:
+    def fetch_property_list(website: Website) -> dict:
+        """Fetch the property list for the website and return it as a dict."""
+        property_list = website.property_lists.first()
+        if not property_list:
             return {}
-        try:
-            res = requests.get(endpoint, timeout=5)
-            res.raise_for_status()
-            return res.json()
-        except Exception:
-            return {}
-
-    @staticmethod
-    def render_content_template(page_content: str, dynamic_data: dict) -> str:
-        """Render page content as a Django template so it can reference dynamic_data."""
-        try:
-            content_template = Template(page_content)
-            return content_template.render(Context({"dynamic_data": dynamic_data}))
-        except Exception:
-            return page_content  # fall back to raw content if template is broken
+        return {
+            "section_id": property_list.section_id,
+            "total_items": property_list.total_items,
+            "orientation": property_list.orientation,
+            "items_per_row": property_list.items_per_row,
+            "item_list": property_list.item_list,
+            "provider": property_list.provider,
+            "type": property_list.type,
+            "location": property_list.location,
+            "source_url": property_list.source_url,
+        }

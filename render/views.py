@@ -3,7 +3,6 @@ import json
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 
-from render.services.dynamic_data import DynamicDataService
 from website.utils.read_file import read_file
 
 
@@ -26,8 +25,6 @@ def render_page(
     except json.JSONDecodeError:
         return HttpResponse("Invalid page data", status=500)
 
-    dynamic_data = page_payload.get("dynamic_data", {})
-
     context = {
         "meta_description": page_payload.get("meta_description", ""),
         "title": page_payload.get("title", ""),
@@ -38,7 +35,6 @@ def render_page(
         "header_content": header_payload.get("header", ""),
         "page_content": page_payload.get("content", ""),
         "footer_content": footer_payload.get("footer", ""),
-        "dynamic_data": dynamic_data,
     }
 
-    return render(request, "dynamic_content.html", context)
+    return render(request, "index.html", context)

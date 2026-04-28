@@ -35,5 +35,10 @@ urlpatterns = [
         "listings/",
         views.DemoListings.as_view(),
         name="demo-listings",
-    )
+    ),
+    path(
+        "property-lists/<int:website>/",
+        views.PropertyListView.as_view(),
+        name="property-list",
+    ),
 ]

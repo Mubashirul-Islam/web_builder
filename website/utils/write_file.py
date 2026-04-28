@@ -1,6 +1,7 @@
 from django.core.files.storage import default_storage
 from django.core.files import File
 
+
 def write_file(path: str, file: File) -> None:
     try:
         if default_storage.exists(path):
