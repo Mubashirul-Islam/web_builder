@@ -362,7 +362,7 @@ class DemoListings(APIView):
         )
 
 
-class PropertyListView(generics.RetrieveAPIView):
+class PropertyListView(generics.ListAPIView):
     """API endpoint that provides a list of demo properties."""
 
     lookup_field = "website"

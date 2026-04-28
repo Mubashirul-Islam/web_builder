@@ -7,6 +7,7 @@ from django.core.files.storage import default_storage
 
 from render.services.dynamic_data import DynamicDataService
 from website.models import Website, Page
+from website.utils.js_snippet import js_snippet
 from website.utils.write_file import write_file
 
 
@@ -46,6 +47,7 @@ class WebsiteBuilder:
             )
             cls._write_page(pages_dir, page.slug, payload_json)
 
+        js_content = cls._append_js_snippet(js_content, js_snippet(website, page))
         cls._write_static_files(static_dir, css_content, js_content)
         cls._write_asset_files(asset_dir, website)
 
@@ -109,6 +111,14 @@ class WebsiteBuilder:
 
         write_file(css_path, ContentFile(css_content.encode("utf-8")))
         write_file(js_path, ContentFile(js_content.encode("utf-8")))
+
+    @staticmethod
+    def _append_js_snippet(js_content: str, snippet: str) -> str:
+        """Append a JavaScript snippet to the end of JS content."""
+        if not snippet:
+            return js_content
+        separator = "\n" if js_content and not js_content.endswith("\n") else ""
+        return f"{js_content}{separator}{snippet}"
 
     @staticmethod
     def _write_asset_files(asset_dir: str, website: Website) -> None:
