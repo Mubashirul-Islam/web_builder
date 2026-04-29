@@ -1,13 +1,13 @@
 import json
 from pathlib import Path
 
+from bs4 import BeautifulSoup
 from django.db.models.fields.files import FieldFile
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
 from render.services.dynamic_data import DynamicDataService
 from website.models import Website, Page
-from website.utils.js_snippet import js_snippet
 from website.utils.write_file import write_file
 
 
@@ -37,6 +37,7 @@ class WebsiteBuilder:
                     f"Failed to read content for page '{page.slug}'."
                 ) from exc
             property_list = DynamicDataService.fetch_property_list(website)
+            page_content = cls._inject_property_list_html(page_content, property_list)
 
             payload_json = cls._render_page_json(
                 page,
@@ -47,7 +48,6 @@ class WebsiteBuilder:
             )
             cls._write_page(pages_dir, page.slug, payload_json)
 
-        js_content = cls._append_js_snippet(js_content, js_snippet(website, page))
         cls._write_static_files(static_dir, css_content, js_content)
         cls._write_asset_files(asset_dir, website)
 
@@ -113,14 +113,6 @@ class WebsiteBuilder:
         write_file(js_path, ContentFile(js_content.encode("utf-8")))
 
     @staticmethod
-    def _append_js_snippet(js_content: str, snippet: str) -> str:
-        """Append a JavaScript snippet to the end of JS content."""
-        if not snippet:
-            return js_content
-        separator = "\n" if js_content and not js_content.endswith("\n") else ""
-        return f"{js_content}{separator}{snippet}"
-
-    @staticmethod
     def _write_asset_files(asset_dir: str, website: Website) -> None:
         for asset in website.assets.all():
             filename = Path(asset.file.name).name
@@ -136,3 +128,84 @@ class WebsiteBuilder:
             return content if isinstance(content, str) else content.decode("utf-8")
         except FileNotFoundError as exc:
             raise FileNotFoundError(f"File '{field.name}' was not found.") from exc
+
+    @staticmethod
+    def _inject_property_list_html(page_content: str, property_list: dict) -> str:
+        """Render property list HTML into the #properties section of page content."""
+        if not page_content:
+            return page_content
+
+        soup = BeautifulSoup(page_content, "html.parser")
+        section = soup.find(id="properties")
+        if not section:
+            return page_content
+
+        items = property_list.get("item_list") or []
+        is_grid = property_list.get("orientation") == "grid"
+
+        section["class"] = ["grid-view" if is_grid else "list-view"]
+        if is_grid:
+            cols = property_list.get("items_per_row") or 4
+            cols_rule = f"--cols: {cols};"
+            current_style = section.get("style", "").strip()
+            if current_style:
+                current_style = current_style.rstrip(";") + "; "
+            section["style"] = f"{current_style}{cols_rule}".strip()
+
+        container = soup.new_tag("div", **{"class": "container"})
+
+        for item in items:
+            card = soup.new_tag("div", **{"class": "card"})
+            img = soup.new_tag(
+                "img",
+                src=item.get("image", ""),
+                alt=item.get("title", ""),
+            )
+            card.append(img)
+
+            body = soup.new_tag("div", **{"class": "card-body"})
+
+            title = soup.new_tag("h3")
+            title.string = item.get("title", "")
+            body.append(title)
+
+            location = soup.new_tag("p", **{"class": "location"})
+            location_text = item.get("location", "")
+            location.string = f"Location: {location_text}".strip()
+            body.append(location)
+
+            price = soup.new_tag("p", **{"class": "price"})
+            currency = item.get("currency", "")
+            price_value = item.get("price", "")
+            price.string = f"{currency} {price_value}".strip()
+            body.append(price)
+
+            rating = soup.new_tag("p", **{"class": "rating"})
+            rating_value = item.get("rating", "")
+            reviews = item.get("reviews", "")
+            rating.string = f"Rating: {rating_value} ({reviews})".strip()
+            body.append(rating)
+
+            features = soup.new_tag("div", **{"class": "features"})
+            for feature in item.get("features") or []:
+                span = soup.new_tag("span")
+                span.string = str(feature)
+                features.append(span)
+            body.append(features)
+
+            provider = soup.new_tag("small", **{"class": "provider"})
+            provider.string = item.get("provider_label", "")
+            body.append(provider)
+
+            if item.get("is_new"):
+                badge = soup.new_tag("span", **{"class": "badge"})
+                badge.string = "NEW"
+                body.append(badge)
+
+            card.append(body)
+            container.append(card)
+
+        section.clear()
+        section.append(container)
+
+        return str(soup)

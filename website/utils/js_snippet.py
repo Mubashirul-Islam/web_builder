@@ -1,5 +1,6 @@
 from website.models import Page, Website
 
+
 def js_snippet(website: Website, page: Page) -> str:
     return f"""
 console.log("Script loaded after build");
