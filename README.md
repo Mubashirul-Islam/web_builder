@@ -1,4 +1,4 @@
-# Web Builder API
+## Web Builder API
 
 Web Builder is a Django + Django REST Framework backend for:
 
